@@ -4,59 +4,72 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { CalendarClock, CheckCircle2, Clock, CheckSquare, Settings, Users, LayoutDashboard, Calendar as CalendarIcon, DollarSign } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Clock, Settings, Users, Calendar as CalendarIcon, DollarSign, Link as LinkIcon } from 'lucide-react'
 
 interface Turno {
   id: string
   fecha_hora: string
   estado: string
-  cliente: {
-    full_name: string
-    email: string
-  }
-  servicio: {
-    nombre: string
-    precio: number
-  }
+  cliente: { full_name: string; email: string } | null
+  servicio: { nombre: string; precio: number } | null
+}
+
+interface Barbershop {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function AdminPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [barbershop, setBarbershop] = useState<Barbershop | null>(null)
   const [turnos, setTurnos] = useState<Turno[]>([])
-  const [servicios, setServicios] = useState<any[]>([])
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
-      // Check if admin (simple check - in production use role-based)
-      if (user.email !== 'admin@intux.com' && user.email !== 'admin@peluqueria.com') {
-        toast.error('Acceso denegado', {
-          description: 'No tenés permisos para ver esta sección.'
-        })
+      if (!user) { router.push('/login'); return }
+
+      // Verify role is admin or superadmin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        toast.error('Acceso denegado', { description: 'No tenés permisos para ver esta sección.' })
         router.push('/')
         return
       }
-      
-      setUser(user)
-      fetchData()
+
+      // Load the barbershop owned by this user
+      const { data: shop } = await supabase
+        .from('barbershops')
+        .select('id, name, slug')
+        .eq('owner_id', user.id)
+        .single()
+
+      if (!shop) {
+        // Admin without a barbershop yet — redirect to registration
+        toast.error('Peluquería no encontrada', { description: 'Primero registrá tu peluquería.' })
+        router.push('/planes')
+        return
+      }
+
+      setBarbershop(shop)
+      fetchData(shop.id)
     }
     checkUser()
-  }, [supabase, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (barbershopId: string) => {
     setLoading(true)
-    
-    // Fetch today's turns
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
@@ -64,46 +77,27 @@ export default function AdminPage() {
 
     const { data: turnsData } = await supabase
       .from('turnos')
-      .select(`
-        id,
-        fecha_hora,
-        estado,
-        cliente:profiles!turnos_cliente_id_fkey(full_name, email),
-        servicio:servicios(nombre, precio)
-      `)
+      .select(`id, fecha_hora, estado, cliente:profiles!turnos_cliente_id_fkey(full_name, email), servicio:servicios(nombre, precio)`)
+      .eq('barbershop_id', barbershopId)
       .gte('fecha_hora', today.toISOString())
       .lt('fecha_hora', tomorrow.toISOString())
       .order('fecha_hora')
 
     if (turnsData) setTurnos(turnsData as any)
-
-    // Fetch servicios
-    const { data: servData } = await supabase
-      .from('servicios')
-      .select('*')
-      .order('nombre')
-    
-    if (servData) setServicios(servData)
-
     setLoading(false)
   }
 
   const actualizarEstado = async (turnoId: string, nuevoEstado: string) => {
-    try {
-      const { error } = await supabase
-        .from('turnos')
-        .update({ estado: nuevoEstado })
-        .eq('id', turnoId)
+    const { error } = await supabase
+      .from('turnos')
+      .update({ estado: nuevoEstado })
+      .eq('id', turnoId)
 
-      if (error) throw error
-      toast.success('Estado actualizado', {
-        description: `El turno ahora está marcado como ${nuevoEstado}.`
-      })
-      fetchData()
-    } catch (error: any) {
-      toast.error('Ocurrió un error', {
-        description: error.message
-      })
+    if (error) {
+      toast.error('Ocurrió un error', { description: error.message })
+    } else {
+      toast.success('Estado actualizado', { description: `El turno ahora está marcado como ${nuevoEstado}.` })
+      if (barbershop) fetchData(barbershop.id)
     }
   }
 
@@ -115,198 +109,198 @@ export default function AdminPage() {
     recaudacion: turnos.filter(t => t.estado === 'completado').reduce((acc, t) => acc + (t.servicio?.precio || 0), 0)
   }
 
-  if (!user || loading) {
+  if (!barbershop || loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background min-h-[calc(100vh-4rem)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
-          <p className="text-muted-foreground animate-pulse font-medium">Cargando panel de administración...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-background py-10 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)]">
-      {/* Background decoration */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/10 blur-[150px] rounded-full pointer-events-none -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none translate-y-1/3 -translate-x-1/3" />
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="ghost" 
+            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/admin/servicios')}
+          >
+            <Settings className="w-4 h-4 mr-2" /> Services
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/perfil')}
+          >
+            <Users className="w-4 h-4 mr-2" /> Profile
+          </Button>
+        </div>
+      </nav>
 
-      <div className="max-w-7xl mx-auto relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+        {/* Header Section */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
-              <span className="bg-gradient-to-tr from-primary/20 to-primary/5 p-2 rounded-xl border border-primary/20 text-primary shadow-inner">
-                <LayoutDashboard className="h-8 w-8" />
-              </span>
-              Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-2 text-lg">Resumen general y gestión de turnos del día.</p>
+            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Admin Dashboard</h1>
+            <p className="text-gray-500 font-light text-sm tracking-wide capitalize">
+              {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
           </div>
-          <div className="flex gap-4">
-            <Button 
-              onClick={() => router.push('/admin/servicios')}
-              variant="outline"
-              className="h-12 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary min-w-[200px]"
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              className="text-[10px] tracking-widest uppercase font-light text-gray-500 hover:text-white hover:bg-white/5 h-10 px-4 rounded-none border border-white/10 flex items-center gap-2"
+              onClick={() => window.open(`/b/${barbershop.slug}`, '_blank')}
             >
-              <Settings className="mr-2 h-5 w-5" />
-              Gestión de Servicios
+              <LinkIcon className="w-3.5 h-3.5" /> /b/{barbershop.slug}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all"
+              onClick={() => fetchData(barbershop.id)}
+            >
+              Refresh
             </Button>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          {/* Total */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-xl relative overflow-hidden group hover:border-primary/50 transition-colors">
-            <div className="absolute -right-6 -top-6 text-white/5 group-hover:text-primary/10 transition-colors duration-500 pointer-events-none">
-               <CalendarIcon className="w-32 h-32" />
-            </div>
-            <CardContent className="p-6 relative z-10">
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
-                 <CalendarIcon className="h-4 w-4" /> Turnos Hoy
-              </p>
-              <p className="text-4xl font-bold text-foreground">{stats.total}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Appointments</p>
+                <CalendarIcon className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.total}</p>
             </CardContent>
           </Card>
-          
-          {/* Pendientes */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-xl relative overflow-hidden group hover:border-yellow-500/50 transition-colors">
-            <div className="absolute -right-6 -top-6 text-white/5 group-hover:text-yellow-500/10 transition-colors duration-500 pointer-events-none">
-               <Clock className="w-32 h-32" />
-            </div>
-            <CardContent className="p-6 relative z-10">
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
-                 <Clock className="h-4 w-4 text-yellow-500" /> Pendientes
-              </p>
-              <p className="text-4xl font-bold text-foreground">{stats.pendientes}</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Pending</p>
+                <Clock className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.pendientes}</p>
             </CardContent>
           </Card>
-          
-          {/* Confirmados */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-xl relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-            <div className="absolute -right-6 -top-6 text-white/5 group-hover:text-blue-500/10 transition-colors duration-500 pointer-events-none">
-               <CheckCircle2 className="w-32 h-32" />
-            </div>
-            <CardContent className="p-6 relative z-10">
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
-                 <CheckCircle2 className="h-4 w-4 text-blue-500" /> Confirmados
-              </p>
-              <p className="text-4xl font-bold text-foreground">{stats.confirmados}</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Confirmed</p>
+                <CheckCircle2 className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.confirmados}</p>
             </CardContent>
           </Card>
-          
-          {/* Recaudación */}
-          <Card className="bg-white/5 border-white/10 backdrop-blur-xl relative overflow-hidden group hover:border-green-500/50 transition-colors">
-            <div className="absolute -right-6 -top-6 text-white/5 group-hover:text-green-500/10 transition-colors duration-500 pointer-events-none">
-               <DollarSign className="w-32 h-32" />
-            </div>
-            <CardContent className="p-6 relative z-10">
-              <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mb-2">
-                 <DollarSign className="h-4 w-4 text-green-500" /> Recaudación Hoy
-              </p>
-              <p className="text-4xl font-bold text-foreground">${stats.recaudacion}</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Revenue</p>
+                <DollarSign className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">${stats.recaudacion}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Turnos Board */}
-        <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl overflow-hidden">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
-          <CardHeader className="bg-black/20 border-b border-white/5 pb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <div>
-              <CardTitle className="text-xl flex items-center gap-2">
-                <CalendarClock className="h-6 w-6 text-primary" />
-                Agenda de Hoy
-              </CardTitle>
-              <CardDescription className="mt-1 text-base">
-                {new Date().toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-              </CardDescription>
+        {/* Schedule Board */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <h2 className="text-sm tracking-widest uppercase font-light text-white">Daily Agenda</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">Live Updates</span>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             {turnos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-                <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary/50 mb-6">
-                  <CalendarClock className="h-10 w-10" />
-                </div>
-                <h3 className="text-2xl font-semibold text-foreground mb-2">Día Libre</h3>
-                <p className="text-muted-foreground max-w-sm mx-auto">
-                  No hay turnos agendados para este día. ¡Disfrutá tu tiempo libre!
-                </p>
+              <div className="py-24 px-6 border border-white/10 border-dashed text-center">
+                <CalendarClock className="w-10 h-10 text-gray-600 mx-auto mb-4" />
+                <p className="text-sm font-light text-gray-500 tracking-wide">No appointments scheduled for today.</p>
               </div>
             ) : (
-              <div className="divide-y divide-white/5">
-                {turnos.map((turno) => (
-                  <div key={turno.id} className="p-5 sm:p-6 flex flex-col lg:flex-row justify-between lg:items-center gap-6 hover:bg-white/[0.02] transition-colors">
-                    <div className="flex gap-4 lg:gap-6 items-start">
-                      {/* Time Badge */}
-                      <div className="bg-black/40 border border-white/10 rounded-xl px-4 py-3 shrink-0 flex items-center justify-center">
-                         <span className="text-xl font-bold text-primary">
-                           {new Date(turno.fecha_hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                         </span>
-                      </div>
-                      
-                      {/* Turno Details */}
-                      <div>
-                        <div className="mb-2">
-                           <h4 className="text-lg font-bold text-foreground flex items-center gap-2">
-                             {turno.cliente?.full_name || 'Sin nombre'}
-                           </h4>
-                           <p className="text-muted-foreground text-sm flex items-center gap-1.5 mt-0.5">
-                             <Mail className="h-3.5 w-3.5" />
-                             {turno.cliente?.email}
-                           </p>
-                        </div>
-                        <div className="bg-primary/10 border border-primary/20 text-primary px-3 py-1.5 rounded-lg inline-flex items-center text-sm font-medium">
-                          {turno.servicio?.nombre} <span className="mx-2 opacity-50">•</span> ${turno.servicio?.precio}
-                        </div>
-                      </div>
+              turnos.map((turno) => (
+                <div 
+                  key={turno.id}
+                  className="flex flex-col md:flex-row md:items-center justify-between p-6 border border-white/10 bg-zinc-900/30 hover:bg-zinc-900/50 transition-all gap-6"
+                >
+                  <div className="flex items-center gap-8">
+                    <div className="h-full border-r border-white/10 pr-8">
+                       <p className="text-2xl font-light tracking-tighter">
+                         {new Date(turno.fecha_hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                       </p>
                     </div>
                     
-                    {/* Turno Actions */}
-                    <div className="flex items-center gap-3 self-end lg:self-auto ml-16 lg:ml-0">
-                      {/* Status Badge */}
-                      <span className={`px-4 py-1.5 rounded-full text-sm font-medium border flex items-center gap-1.5 ${
-                        turno.estado === 'pendiente' ? 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20' :
-                        turno.estado === 'confirmado' ? 'bg-blue-500/10 text-blue-500 border-blue-500/20' :
-                        turno.estado === 'completado' ? 'bg-green-500/10 text-green-500 border-green-500/20' :
-                        'bg-red-500/10 text-red-500 border-red-500/20'
-                      }`}>
-                         {turno.estado === 'pendiente' && <Clock className="h-3.5 w-3.5" />}
-                         {turno.estado === 'confirmado' && <CheckCircle2 className="h-3.5 w-3.5" />}
-                         {turno.estado === 'completado' && <CheckSquare className="h-3.5 w-3.5" />}
-                        <span className="capitalize">{turno.estado}</span>
-                      </span>
+                    <div>
+                      <h4 className="text-lg font-light tracking-wide text-white mb-1">
+                        {turno.cliente?.full_name || 'N/A'}
+                      </h4>
+                      <div className="flex items-center gap-4">
+                        <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">
+                          {turno.servicio?.nombre}
+                        </span>
+                        <span className="text-[10px] tracking-widest uppercase font-light text-white">
+                          ${turno.servicio?.precio}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* Action Buttons */}
+                  <div className="flex items-center gap-6">
+                    <div className={`text-[10px] tracking-widest uppercase font-light px-3 py-1 border transition-all ${
+                      turno.estado === 'pendiente' ? 'border-gray-500/50 text-gray-400' :
+                      turno.estado === 'confirmado' ? 'border-white text-white' :
+                      turno.estado === 'completado' ? 'border-white/10 bg-white/5 text-gray-500' :
+                      'border-red-500/50 text-red-500'
+                    }`}>
+                      {turno.estado}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
                       {turno.estado === 'pendiente' && (
                         <Button 
                           onClick={() => actualizarEstado(turno.id, 'confirmado')}
-                          className="font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20"
+                          className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
                         >
-                          Confirmar
+                          Confirm
                         </Button>
                       )}
                       {turno.estado === 'confirmado' && (
                         <Button 
                           onClick={() => actualizarEstado(turno.id, 'completado')}
-                          className="font-medium bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-900/20"
+                          className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
                         >
-                          Completar
+                          Complete
                         </Button>
                       )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 text-gray-600 hover:text-white hover:bg-white/5 rounded-none"
+                        title="Cancel Appointment"
+                        onClick={() => actualizarEstado(turno.id, 'cancelado')}
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
-
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

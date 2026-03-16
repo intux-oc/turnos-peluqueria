@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { User } from '@supabase/supabase-js'
-import { UserCircle, Save, Mail, User as UserIcon, Phone } from 'lucide-react'
-
+import { UserCircle, Save, Mail, User as UserIcon, Phone, LogOut, Settings, History, CalendarDays } from 'lucide-react'
 export default function PerfilPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -86,115 +85,205 @@ export default function PerfilPage() {
   if (!user) return null
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-4rem)] relative overflow-hidden bg-background py-10 px-4 sm:px-6 lg:px-8">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
-      
-      <div className="max-w-2xl mx-auto relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
+          <span className="text-sm font-light text-gray-400">Welcome, {fullName || 'User'}</span>
+          <Button 
+            variant="ghost" 
+            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5 data-[state=open]:bg-white/5"
+            onClick={async () => {
+               await supabase.auth.signOut()
+               router.push('/')
+            }}
+          >
+            <LogOut className="w-4 h-4 mr-2" /> Sign Out
+          </Button>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex mx-auto justify-center sm:justify-start items-center gap-3">
-            <span className="bg-gradient-to-tr from-primary/20 to-primary/5 p-2 rounded-xl border border-primary/20 text-primary shadow-inner">
-              <UserCircle className="h-8 w-8" />
-            </span>
-            Ajustes de Perfil
-          </h1>
-          <p className="text-muted-foreground mt-3 text-lg leading-relaxed max-w-xl mx-auto sm:mx-0">
-            Gestioná tu información personal y datos de contacto para tus próximos turnos.
-          </p>
+        {/* Header Section */}
+        <div className="mb-12 border-b border-white/10 pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div className="flex items-center gap-6">
+            <div className="w-24 h-24 rounded-full bg-zinc-900 border border-white/20 flex items-center justify-center shrink-0">
+              <UserIcon className="w-10 h-10 text-gray-400" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-light tracking-wide mb-2">My Profile</h1>
+              <p className="text-gray-500 font-light text-sm tracking-wide">
+                Manage your personal information and preferences
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              className="h-12 border-white/20 hover:bg-white/5 hover:text-white rounded-none font-light text-gray-300 text-xs tracking-widest uppercase flex items-center gap-2"
+              onClick={() => router.push('/mis-turnos')}
+            >
+              <History className="w-4 h-4" /> Appointments
+            </Button>
+          </div>
         </div>
 
-        <Card className="bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl relative overflow-hidden">
-          {/* Top accent line */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           
-          <CardHeader className="bg-black/20 border-b border-white/5 pb-6">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
-               <div className="h-20 w-20 rounded-full bg-gradient-to-tr from-primary/20 to-primary/5 flexitems-center justify-center text-primary border border-primary/30 shadow-inner flex items-center shrink-0">
-                 <UserCircle className="h-10 w-10 mx-auto" />
-               </div>
-               <div className="pt-2 sm:pt-4">
-                  <CardTitle className="text-2xl font-bold">{fullName || 'Tu Perfil'}</CardTitle>
-                  <CardDescription className="text-base mt-1">Mantén tus datos actualizados para una mejor experiencia.</CardDescription>
-               </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="p-6 sm:p-8 space-y-6">
-            <div className="grid gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email" className="text-foreground/80 font-medium ml-1">Correo Electrónico</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground/50" />
-                  <Input 
-                    id="email" 
-                    value={user.email} 
-                    disabled 
-                    className="pl-10 bg-black/40 border-white/5 text-muted-foreground h-12 cursor-not-allowed opacity-70"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground ml-1">El correo electrónico no se puede modificar.</p>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="fullName" className="text-foreground/80 font-medium ml-1">Nombre Completo</Label>
-                <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="fullName"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="Ej. Juan Pérez"
-                    className="pl-10 bg-black/20 border-white/10 focus:border-primary/50 text-foreground h-12 transition-all hover:bg-black/30"
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="phone" className="text-foreground/80 font-medium ml-1">Teléfono / WhatsApp</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="phone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="Ej. +54 9 11 1234 5678"
-                    className="pl-10 bg-black/20 border-white/10 focus:border-primary/50 text-foreground h-12 transition-all hover:bg-black/30"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-8 flex flex-col sm:flex-row justify-end gap-4 border-t border-white/5">
-              <Button 
-                onClick={() => router.push('/')} 
-                variant="ghost"
-                className="h-12 px-6 hover:bg-white/5"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSave} 
-                disabled={saving || !fullName}
-                className="h-12 px-8 font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all active:scale-[0.98] group"
-              >
-                {saving ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                    <span>Guardando...</span>
+          {/* Quick Stats / Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="bg-zinc-900/50 border-white/10 rounded-none">
+              <CardContent className="p-6">
+                <h3 className="text-xs tracking-widest uppercase text-gray-400 font-light border-b border-white/10 pb-4 mb-4 flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4" /> Activity Summary
+                </h3>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-light text-gray-500">Total Visits</span>
+                    <span className="text-lg font-light">-</span>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2">
-                    <Save className="h-5 w-5 transition-transform group-hover:scale-110" />
-                    <span>Guardar Cambios</span>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-light text-gray-500">Upcoming</span>
+                    <span className="text-lg font-light">-</span>
                   </div>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-light text-gray-500">Member Since</span>
+                    <span className="text-lg font-light">
+                       {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-zinc-900/50 border-white/10 rounded-none">
+              <CardContent className="p-6">
+                 <h3 className="text-xs tracking-widest uppercase text-gray-400 font-light border-b border-white/10 pb-4 mb-4 flex items-center gap-2">
+                  <Settings className="w-4 h-4" /> Preferences
+                 </h3>
+                 <div className="space-y-4">
+                   <div className="flex items-center justify-between">
+                     <span className="text-sm font-light text-gray-400">Email Notifications</span>
+                     <div className="w-10 h-5 bg-white rounded-full relative cursor-pointer">
+                       <div className="w-4 h-4 bg-black rounded-full absolute right-0.5 top-0.5" />
+                     </div>
+                   </div>
+                   <div className="flex items-center justify-between">
+                     <span className="text-sm font-light text-gray-400">SMS Reminders</span>
+                     <div className="w-10 h-5 bg-zinc-700 rounded-full relative cursor-pointer border border-white/20">
+                       <div className="w-4 h-4 bg-gray-400 rounded-full absolute left-0.5 top-0.5" />
+                     </div>
+                   </div>
+                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Form Area */}
+          <div className="lg:col-span-2">
+            <Card className="bg-transparent border-none">
+              <CardContent className="p-0">
+                <form className="space-y-8" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+                  
+                  {/* Personal Info Section */}
+                  <div>
+                    <h3 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-6">
+                      Personal Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="fullName" className="text-xs tracking-widest uppercase text-gray-400 font-light">Full Name</Label>
+                        <div className="relative">
+                          <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                          <Input
+                            id="fullName"
+                            type="text"
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="John Doe"
+                            className="pl-12 bg-zinc-900/50 border-white/20 focus:border-white text-white h-14 rounded-none font-light placeholder:text-gray-600 transition-colors"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <Label htmlFor="phone" className="text-xs tracking-widest uppercase text-gray-400 font-light">Phone Number</Label>
+                        <div className="relative">
+                          <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            placeholder="+1 (555) 000-0000"
+                            className="pl-12 bg-zinc-900/50 border-white/20 focus:border-white text-white h-14 rounded-none font-light placeholder:text-gray-600 transition-colors"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Account Security Section */}
+                  <div>
+                    <h3 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-6">
+                      Account Security
+                    </h3>
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="email" className="text-xs tracking-widest uppercase text-gray-400 font-light">Email Address</Label>
+                        <div className="relative">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                          <Input
+                            id="email"
+                            type="email"
+                            value={user?.email || ''}
+                            disabled
+                            className="pl-12 bg-zinc-900/30 border-white/10 text-gray-500 h-14 rounded-none font-light cursor-not-allowed"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 font-light">Email address cannot be changed currently.</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-6 border-t border-white/10 flex items-center justify-end gap-4">
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      className="h-14 px-8 text-sm tracking-widest uppercase font-light text-gray-400 hover:text-white hover:bg-white/5 rounded-none transition-colors"
+                      onClick={() => router.push('/')}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="h-14 px-12 text-sm tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-all rounded-none flex items-center justify-center gap-3"
+                      disabled={saving || !fullName}
+                    >
+                      {saving ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                          <span>Saving...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          <span>Save Changes</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

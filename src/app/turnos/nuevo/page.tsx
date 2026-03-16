@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
 import { toast } from 'sonner'
-import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, ChevronRight, Clock, Scissors, Search, FileText } from 'lucide-react'
+import { ArrowLeft, ArrowRight, CalendarDays, CheckCircle2, ChevronRight, Clock, Scissors, Search, FileText, CalendarCheck, MapPin, User as UserIcon } from 'lucide-react'
 
 interface Servicio {
   id: string
@@ -140,330 +140,309 @@ export default function NuevoTurnoPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        
-        {/* Header */}
-        <div className="mb-10 block text-center sm:text-left">
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
           <Button 
             variant="ghost" 
-            className="mb-4 text-gray-400 hover:text-white hover:bg-white/5 -ml-4"
-            onClick={() => router.push(step === 1 ? '/mis-turnos' : '#')}
-            onClickCapture={(e) => {
-              if (step > 1) {
-                e.stopPropagation()
-                setStep(step - 1)
-              }
+            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/perfil')}
+          >
+            <UserIcon className="w-4 h-4 mr-2" /> Profile
+          </Button>
+        </div>
+      </nav>
+
+      <main className="flex-1 max-w-5xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Header Section */}
+        <div className="mb-12">
+          <Button 
+            variant="ghost" 
+            className="mb-6 h-8 px-0 text-gray-500 hover:text-white hover:bg-transparent tracking-widest uppercase text-xs font-light"
+            onClick={() => {
+              if (step > 1) setStep(step - 1)
+              else router.push('/mis-turnos')
             }}
           >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {step === 1 ? 'Volver a Mis Turnos' : 'Paso anterior'}
+            <ArrowLeft className="w-3 h-3 mr-2" /> {step === 1 ? 'Back to Appointments' : 'Previous Step'}
           </Button>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-            Reservar Turno
-          </h1>
-          <p className="text-gray-400 mt-2">Personalizá tu experiencia en 4 simples pasos</p>
+          <h1 className="text-4xl font-light tracking-wide mb-2">Book Appointment</h1>
+          <p className="text-gray-500 font-light text-sm tracking-wide">
+            Select your service, date, and time.
+          </p>
         </div>
-        
-        {/* Progress Timeline */}
-        <div className="relative mb-12 px-2 sm:px-0 hidden sm:block">
-          <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white/5 -translate-y-1/2 z-0 rounded-full" />
-          <div 
-            className="absolute top-1/2 left-0 h-[2px] bg-gradient-to-r from-amber-500 to-amber-300 -translate-y-1/2 z-0 rounded-full transition-all duration-500 ease-in-out" 
-            style={{ width: `${((step - 1) / (steps.length - 1)) * 100}%` }}
-          />
+
+        <div className="flex flex-col lg:flex-row gap-12">
           
-          <div className="relative z-10 flex justify-between">
-            {steps.map((s) => {
-              const StepIcon = s.icon
-              const isActive = step === s.num
-              const isCompleted = step > s.num
+          {/* Main Booking Area */}
+          <div className="flex-1">
+            {/* Step Indicator */}
+            <div className="flex items-center justify-between mb-8 relative">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-px bg-white/10 z-0" />
+              <div 
+                className="absolute left-0 top-1/2 -translate-y-1/2 h-px bg-white z-0 transition-all duration-500"
+                style={{ width: `${((step - 1) / 3) * 100}%` }}
+              />
               
-              return (
-                <div key={s.num} className="flex flex-col items-center gap-2">
-                  <div 
-                    className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 shadow-xl ${
-                      isActive 
-                        ? 'bg-[#1a1a1a] border-amber-500 text-amber-500 scale-110' 
-                        : isCompleted 
-                          ? 'bg-amber-500 border-amber-500 text-black' 
-                          : 'bg-[#0a0a0a] border-white/10 text-gray-500'
-                    }`}
-                  >
-                    <StepIcon className="w-4 h-4" />
+              {steps.map((s) => (
+                <div key={s.num} className={`relative z-10 flex flex-col items-center gap-2 ${step >= s.num ? 'text-white' : 'text-gray-600'}`}>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs bg-black ${
+                    step >= s.num ? 'border border-white' : 'border border-white/20'
+                  }`}>
+                    {step > s.num ? <CheckCircle2 className="w-4 h-4" /> : s.num}
                   </div>
-                  <span className={`text-xs font-medium transition-colors ${isActive ? 'text-amber-500' : isCompleted ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <span className="text-[10px] tracking-widest uppercase font-light bg-black px-1 hidden sm:block">
                     {s.title}
                   </span>
                 </div>
-              )
-            })}
-          </div>
-        </div>
+              ))}
+            </div>
 
-        {/* Mobile Progress Indicator */}
-        <div className="sm:hidden mb-8 text-center flex items-center justify-center gap-2">
-           <span className="text-amber-500 font-medium">Paso {step} de 4</span>
-           <span className="text-gray-500">- {steps[step - 1].title}</span>
-        </div>
-
-        <Card className="bg-white/5 backdrop-blur-md border border-white/10 shadow-2xl overflow-hidden relative">
-          {/* Subtle gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none" />
-          
-          <CardContent className="p-6 sm:p-8 relative z-10 min-h-[400px]">
-            {/* Step 1: Servicio */}
-            {step === 1 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-                      <Scissors className="w-5 h-5 text-amber-500" />
-                      Elegí tu servicio
-                    </h2>
-                    <p className="text-sm text-gray-400 mt-1">Seleccioná el tratamiento que deseas realizarte.</p>
-                  </div>
-                  
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <Input 
-                      placeholder="Buscar servicio..." 
-                      className="pl-9 bg-white/5 border-white/10 text-white placeholder:text-gray-500 focus-visible:ring-amber-500/50"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                  {filteredServicios.map((servicio) => (
-                    <div
-                      key={servicio.id}
-                      className={`group relative p-5 rounded-xl cursor-pointer transition-all duration-300 border ${
-                        servicioId === servicio.id 
-                          ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.15)]' 
-                          : 'bg-white/5 border-white/5 hover:border-white/20 hover:bg-white/10'
-                      }`}
-                      onClick={() => setServicioId(servicio.id)}
-                    >
-                      {servicioId === servicio.id && (
-                         <div className="absolute top-3 right-3 text-amber-500">
-                           <CheckCircle2 className="w-5 h-5" />
+            <Card className="bg-transparent border-none">
+              <CardContent className="p-0">
+                {/* Step 1: Services */}
+                {step === 1 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="relative mb-6">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <Input 
+                        placeholder="Search services..." 
+                        className="pl-12 bg-zinc-900/50 border-white/20 focus:border-white text-white h-12 rounded-none font-light placeholder:text-gray-600 transition-colors"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredServicios.map((servicio) => (
+                        <div 
+                          key={servicio.id}
+                          className={`p-6 border cursor-pointer transition-all ${
+                            servicioId === servicio.id 
+                              ? 'border-white bg-white/5' 
+                              : 'border-white/10 bg-zinc-900/50 hover:border-white/30'
+                          }`}
+                          onClick={() => setServicioId(servicio.id)}
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <h3 className="text-lg font-light tracking-wide pr-4">{servicio.nombre}</h3>
+                            {servicioId === servicio.id && <CheckCircle2 className="w-5 h-5 text-white shrink-0" />}
+                          </div>
+                          <p className="text-sm text-gray-500 font-light line-clamp-2 h-10 mb-4">{servicio.descripcion}</p>
+                          <div className="flex items-center justify-between mt-auto">
+                            <span className="text-xs tracking-widest uppercase font-light text-gray-400">{servicio.duracion_minutos} MIN</span>
+                            <span className="text-lg font-light">${servicio.precio}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {filteredServicios.length === 0 && (
+                         <div className="col-span-full py-12 px-6 border border-white/10 border-dashed text-center">
+                           <Scissors className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                           <p className="text-sm font-light text-gray-500">No services found matching your search.</p>
                          </div>
                       )}
-                      <div className="flex justify-between items-start mb-2 pr-6">
-                        <h3 className={`font-semibold text-lg ${servicioId === servicio.id ? 'text-amber-400' : 'text-white'}`}>
-                          {servicio.nombre}
-                        </h3>
-                      </div>
-                      <p className="text-sm text-gray-400 line-clamp-2 mb-4 h-10">{servicio.descripcion}</p>
-                      
-                      <div className="flex justify-between items-end mt-auto pt-4 border-t border-white/5">
-                        <div className="flex items-center text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {servicio.duracion_minutos} min
-                        </div>
-                        <p className="font-bold text-xl text-white">${servicio.precio}</p>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {filteredServicios.length === 0 && (
-                     <div className="col-span-full py-12 text-center text-gray-500">
-                        No se encontraron servicios que coincidan con tu búsqueda.
-                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Fecha */}
-            {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="text-center sm:text-left mb-6">
-                  <h2 className="text-xl font-semibold text-white flex items-center justify-center sm:justify-start gap-2">
-                    <CalendarDays className="w-5 h-5 text-amber-500" />
-                    ¿Qué día preferís?
-                  </h2>
-                  <p className="text-sm text-gray-400 mt-1">Seleccioná una fecha disponible en el calendario.</p>
-                </div>
-                
-                <div className="flex justify-center bg-white/5 p-4 sm:p-8 rounded-xl border border-white/5">
-                  <Calendar
-                    mode="single"
-                    selected={fecha}
-                    onSelect={setFecha}
-                    disabled={(date) => {
-                      const today = new Date()
-                      today.setHours(0, 0, 0, 0)
-                      // Disable past days and Sundays (0)
-                      return date < today || date.getDay() === 0
-                    }}
-                    className="text-white p-3"
-                    classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 hover:bg-white/10 rounded-md transition-colors",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-gray-400 rounded-md w-9 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "h-9 w-9 text-center text-sm p-0 flex items-center justify-center",
-                      day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100 hover:bg-white/10 rounded-md transition-colors aria-selected:bg-amber-500 aria-selected:text-black aria-selected:font-bold",
-                      day_disabled: "text-gray-600 hover:bg-transparent cursor-not-allowed",
-                      day_today: "bg-white/5 text-amber-400 font-bold",
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Hora */}
-            {step === 3 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="text-center sm:text-left mb-6">
-                  <h2 className="text-xl font-semibold text-white flex items-center justify-center sm:justify-start gap-2">
-                    <Clock className="w-5 h-5 text-amber-500" />
-                    Elegí el horario
-                  </h2>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Mostrando turnos para el {fecha?.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}.
-                  </p>
-                </div>
-                
-                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-4 rounded-lg flex items-start gap-3 mb-6">
-                  <Clock className="w-5 h-5 shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Duración estimada del servicio</p>
-                    <p className="text-xs opacity-80 mt-1">Tu cita tomará aproximadamente {servicioSeleccionado?.duracion_minutos} minutos. Por favor, sé puntual.</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {horasDisponibles().map((h) => (
-                    <Button
-                      key={h}
-                      variant="outline"
-                      className={`h-12 border transition-all ${
-                        hora === h 
-                          ? 'bg-amber-500 text-black border-amber-500 hover:bg-amber-600 shadow-[0_0_15px_rgba(245,158,11,0.3)]' 
-                          : 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white hover:border-white/20'
-                      }`}
-                      onClick={() => setHora(h)}
-                    >
-                      {h}
-                    </Button>
-                  ))}
-                  
-                  {horasDisponibles().length === 0 && (
-                     <div className="col-span-full py-8 text-center text-gray-500">
-                        No hay horarios disponibles para esta fecha.
-                     </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Step 4: Confirmar */}
-            {step === 4 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                <div className="text-center sm:text-left mb-6">
-                  <h2 className="text-xl font-semibold text-white flex items-center justify-center sm:justify-start gap-2">
-                    <CheckCircle2 className="w-5 h-5 text-amber-500" />
-                    Revisá y confirmá
-                  </h2>
-                  <p className="text-sm text-gray-400 mt-1">Acá está el resumen de tu reserva.</p>
-                </div>
-                
-                <div className="bg-white/5 border border-white/10 p-6 rounded-xl space-y-4 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-amber-500" />
-                  
-                  <div className="flex justify-between items-start border-b border-white/5 pb-4">
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1">Servicio seleccionado</p>
-                      <p className="text-lg font-semibold text-white">{servicioSeleccionado?.nombre}</p>
-                    </div>
-                    <p className="text-2xl font-bold border border-amber-500/30 bg-amber-500/10 text-amber-400 px-3 py-1 rounded-lg">
-                      ${servicioSeleccionado?.precio}
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1 flex items-center gap-1.5"><CalendarDays className="w-3.5 h-3.5" /> Fecha</p>
-                      <p className="font-medium text-white">{fecha?.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1 flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> Horario y Duración</p>
-                      <p className="font-medium text-white">{hora} hs <span className="text-gray-500 text-sm ml-1">({servicioSeleccionado?.duracion_minutos} min)</span></p>
                     </div>
                   </div>
-                </div>
-
-                <div className="space-y-3 pt-4 border-t border-white/5">
-                  <Label className="text-gray-300 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-400" />
-                    Agregá una nota adicional <span className="text-gray-500 font-normal">(opcional)</span>
-                  </Label>
-                  <Input
-                    value={notas}
-                    onChange={(e) => setNotas(e.target.value)}
-                    placeholder="Ej: Prefiero corte con tijera, necesito atención especial..."
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-amber-500/50"
-                  />
-                </div>
-              </div>
-            )}
-          </CardContent>
-
-          {/* Navigation Footer */}
-          <div className="bg-black/40 border-t border-white/5 p-4 sm:p-6 flex justify-between items-center z-20 relative">
-            <Button
-              variant="ghost"
-              onClick={() => setStep(step - 1)}
-              disabled={step === 1}
-              className={`text-gray-400 hover:text-white hover:bg-white/10 ${step === 1 ? 'opacity-0 pointer-events-none' : ''}`}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Atrás
-            </Button>
-            
-            {step < 4 ? (
-              <Button
-                onClick={() => setStep(step + 1)}
-                disabled={isNextDisabled()}
-                className="bg-white text-black hover:bg-gray-200 shadow-lg px-8"
-              >
-                Siguiente
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
-              <Button 
-                onClick={handleSubmit} 
-                disabled={loading}
-                className="bg-amber-500 hover:bg-amber-600 text-black font-bold shadow-[0_0_20px_rgba(245,158,11,0.4)] px-8 min-w-[180px]"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                    Procesando...
-                  </div>
-                ) : (
-                  <>
-                    Confirmar Reserva
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </>
                 )}
-              </Button>
-            )}
+
+                {/* Step 2: Date */}
+                {step === 2 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="border border-white/10 bg-zinc-900/50 p-6 flex justify-center">
+                      <Calendar
+                        mode="single"
+                        selected={fecha}
+                        onSelect={setFecha}
+                        disabled={(date) => {
+                          const today = new Date()
+                          today.setHours(0, 0, 0, 0)
+                          return date < today || date.getDay() === 0
+                        }}
+                        className="text-white font-light"
+                        classNames={{
+                          months: "space-y-4",
+                          month: "space-y-4",
+                          caption: "flex justify-center pt-1 relative items-center mb-4",
+                          caption_label: "text-sm tracking-widest uppercase font-light",
+                          nav: "space-x-1 flex items-center",
+                          nav_button: "h-7 w-7 bg-transparent p-0 text-gray-400 hover:text-white transition-colors",
+                          nav_button_previous: "absolute left-1",
+                          nav_button_next: "absolute right-1",
+                          table: "w-full border-collapse space-y-1",
+                          head_row: "flex w-full",
+                          head_cell: "text-gray-500 w-10 sm:w-12 font-light text-xs tracking-widest uppercase",
+                          row: "flex w-full mt-2",
+                          cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                          day: "h-10 w-10 sm:h-12 sm:w-12 p-0 font-light hover:bg-white/10 transition-colors aria-selected:bg-white aria-selected:text-black rounded-none",
+                          day_disabled: "text-gray-700 hover:bg-transparent cursor-not-allowed",
+                          day_today: "border border-white/20",
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 3: Time */}
+                {step === 3 && (
+                  <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
+                    <div className="text-sm font-light text-gray-400 mb-6 flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4" /> 
+                      Showing availability for {fecha?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                    </div>
+                    
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                      {horasDisponibles().map((h) => (
+                        <Button
+                          key={h}
+                          variant="outline"
+                          className={`h-12 rounded-none font-light tracking-widest text-sm transition-colors ${
+                            hora === h 
+                              ? 'bg-white text-black border-white hover:bg-gray-200' 
+                              : 'bg-zinc-900/50 border-white/10 text-gray-300 hover:bg-white/10 hover:border-white/30'
+                          }`}
+                          onClick={() => setHora(h)}
+                        >
+                          {h}
+                        </Button>
+                      ))}
+                      {horasDisponibles().length === 0 && (
+                         <div className="col-span-full py-12 px-6 border border-white/10 border-dashed text-center">
+                           <Clock className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                           <p className="text-sm font-light text-gray-500">No available time slots for this date.</p>
+                         </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step 4: Details & Confirm */}
+                {step === 4 && (
+                  <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+                    <div className="space-y-3">
+                      <Label className="text-xs tracking-widest uppercase text-gray-400 font-light">Additional Notes (Optional)</Label>
+                      <Input
+                        value={notas}
+                        onChange={(e) => setNotas(e.target.value)}
+                        placeholder="Any special requests or preferences?"
+                        className="bg-zinc-900/50 border-white/20 focus:border-white text-white h-14 rounded-none font-light placeholder:text-gray-600 transition-colors"
+                      />
+                    </div>
+                    
+                    <div className="border border-white/10 p-6 bg-zinc-900/30">
+                       <h4 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-4">
+                          Cancellation Policy
+                       </h4>
+                       <p className="text-xs text-gray-500 font-light leading-relaxed">
+                          Please note that cancellations or rescheduling must be done at least 2 hours prior to your appointment time. We value your time and the time of our professionals.
+                       </p>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            {/* Actions */}
+            <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
+              {step < 4 ? (
+                <Button
+                  onClick={() => setStep(step + 1)}
+                  disabled={isNextDisabled()}
+                  className="h-14 px-12 text-sm tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-all rounded-none flex items-center gap-2 w-full sm:w-auto"
+                >
+                  Continue <ArrowRight className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button 
+                  onClick={handleSubmit} 
+                  disabled={loading}
+                  className="h-14 px-12 text-sm tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-all rounded-none flex items-center justify-center gap-3 w-full sm:w-auto"
+                >
+                  {loading ? (
+                    <>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      Confirm Booking <CheckCircle2 className="w-4 h-4 ml-1" />
+                    </>
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
-        </Card>
-      </div>
+
+          {/* Booking Summary Sidebar */}
+          <div className="w-full lg:w-80 shrink-0">
+             <div className="sticky top-32 border border-white/10 bg-zinc-900/50 p-6">
+                <h3 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-6">
+                  Booking Summary
+                </h3>
+                
+                <div className="space-y-6">
+                  {/* Service Detail */}
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                      <Scissors className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-widest uppercase text-gray-500 mb-1">Service</p>
+                      <p className="text-sm font-light text-white">
+                        {servicioSeleccionado ? servicioSeleccionado.nombre : 'Not selected'}
+                      </p>
+                      {servicioSeleccionado && (
+                        <p className="text-xs text-gray-500 mt-1">{servicioSeleccionado.duracion_minutos} min</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Date & Time Detail */}
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                      <CalendarCheck className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-widest uppercase text-gray-500 mb-1">Date & Time</p>
+                      <p className="text-sm font-light text-white">
+                        {fecha ? fecha.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not selected'}
+                      </p>
+                      {hora && (
+                        <p className="text-xs text-gray-500 mt-1">{hora}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location Detail (Static for demo) */}
+                  <div className="flex gap-4">
+                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-[10px] tracking-widest uppercase text-gray-500 mb-1">Location</p>
+                      <p className="text-sm font-light text-white">Peluquería Central</p>
+                      <p className="text-xs text-gray-500 mt-1">123 Main St, City</p>
+                    </div>
+                  </div>
+
+                  {/* Total */}
+                  <div className="pt-6 border-t border-white/10 flex items-end justify-between">
+                     <div>
+                       <p className="text-[10px] tracking-widest uppercase text-gray-500 mb-1">Total</p>
+                       <p className="text-2xl font-light text-white">
+                         {servicioSeleccionado ? `$${servicioSeleccionado.precio}` : '-'}
+                       </p>
+                     </div>
+                  </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

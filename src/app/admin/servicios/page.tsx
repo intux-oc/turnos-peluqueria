@@ -9,52 +9,64 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { ArrowLeft, Plus, Edit2, Power, PowerOff, Clock, DollarSign, Sparkles, Scissors, Info } from 'lucide-react'
+import { ArrowLeft, Plus, Edit2, Power, PowerOff, Clock, DollarSign, Sparkles, Scissors, Info, Settings, Users, LayoutDashboard } from 'lucide-react'
 
 interface Servicio {
   id: string
   nombre: string
-  descripcion: string
+  descripcion: string | null
   precio: number
   duracion_minutos: number
   activo: boolean
+}
+
+interface Barbershop {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function AdminServiciosPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [barbershop, setBarbershop] = useState<Barbershop | null>(null)
   const [servicios, setServicios] = useState<Servicio[]>([])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editando, setEditando] = useState<Servicio | null>(null)
-  const [form, setForm] = useState({
-    nombre: '',
-    descripcion: '',
-    precio: '',
-    duracion_minutos: '',
-  })
+  const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', duracion_minutos: '' })
   const [formLoading, setFormLoading] = useState(false)
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user || (user.email !== 'admin@intux.com' && user.email !== 'admin@peluqueria.com')) {
-        router.push('/')
-        return
+      if (!user) { router.push('/login'); return }
+
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', user.id).single()
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        router.push('/'); return
       }
-      setUser(user)
-      fetchServicios()
+
+      const { data: shop } = await supabase
+        .from('barbershops').select('id, name, slug').eq('owner_id', user.id).single()
+
+      if (!shop) { router.push('/planes'); return }
+
+      setBarbershop(shop)
+      fetchServicios(shop.id)
     }
     checkUser()
-  }, [supabase, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const fetchServicios = async () => {
+  const fetchServicios = async (barbershopId: string) => {
     const { data } = await supabase
       .from('servicios')
       .select('*')
+      .eq('barbershop_id', barbershopId)
       .order('nombre')
-    
     if (data) setServicios(data)
     setLoading(false)
   }
@@ -77,10 +89,12 @@ export default function AdminServiciosPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!barbershop) return
     setFormLoading(true)
 
     try {
       const payload = {
+        barbershop_id: barbershop.id,
         nombre: form.nombre,
         descripcion: form.descripcion,
         precio: parseFloat(form.precio),
@@ -89,282 +103,239 @@ export default function AdminServiciosPage() {
       }
 
       if (editando) {
-        const { error } = await supabase
-          .from('servicios')
-          .update(payload)
-          .eq('id', editando.id)
+        const { error } = await supabase.from('servicios').update(payload).eq('id', editando.id)
         if (error) throw error
-        toast.success('Servicio actualizado', {
-          description: 'Los cambios se guardaron correctamente.'
-        })
+        toast.success('Servicio actualizado')
       } else {
-        const { error } = await supabase
-          .from('servicios')
-          .insert(payload)
+        const { error } = await supabase.from('servicios').insert(payload)
         if (error) throw error
-        toast.success('Servicio creado', {
-          description: 'El nuevo servicio ya está disponible para reservas.'
-        })
+        toast.success('Servicio creado')
       }
 
       setDialogOpen(false)
-      fetchServicios()
+      fetchServicios(barbershop.id)
     } catch (error: any) {
-      toast.error('Ocurrió un error', {
-        description: error.message
-      })
+      toast.error('Ocurrió un error', { description: error.message })
     } finally {
       setFormLoading(false)
     }
   }
 
   const toggleActivo = async (servicio: Servicio) => {
-    try {
-      const { error } = await supabase
-        .from('servicios')
-        .update({ activo: !servicio.activo })
-        .eq('id', servicio.id)
-      
-      if (error) throw error
-      toast.success(servicio.activo ? 'Servicio desactivado' : 'Servicio activado', {
-         description: servicio.activo ? 'El servicio ya no aparecerá.' : 'El servicio está disponible nuevamente.'
-      })
-      fetchServicios()
-    } catch (error: any) {
-      toast.error('Ocurrió un error', {
-         description: error.message
-      })
+    const { error } = await supabase
+      .from('servicios')
+      .update({ activo: !servicio.activo })
+      .eq('id', servicio.id)
+    if (error) {
+      toast.error('Ocurrió un error', { description: error.message })
+    } else {
+      toast.success(servicio.activo ? 'Servicio desactivado' : 'Servicio activado')
+      if (barbershop) fetchServicios(barbershop.id)
     }
   }
 
-  if (!user || loading) {
+  if (!barbershop || loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background min-h-[calc(100vh-4rem)]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/30 border-t-primary" />
-          <p className="text-muted-foreground animate-pulse font-medium">Cargando servicios...</p>
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
       </div>
     )
   }
 
   return (
-    <div className="flex-1 relative overflow-hidden bg-background py-10 px-4 sm:px-6 lg:px-8 min-h-[calc(100vh-4rem)]">
-      {/* Background decoration */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/10 blur-[150px] rounded-full pointer-events-none -translate-x-1/2 -translate-y-1/2" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none translate-x-1/3 translate-y-1/3" />
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black transition-colors duration-500">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="ghost" 
+            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/admin')}
+          >
+            <LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/perfil')}
+          >
+            <Users className="w-4 h-4 mr-2" /> Profile
+          </Button>
+        </div>
+      </nav>
 
-      <div className="max-w-5xl mx-auto relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+        {/* Header Section */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <Button 
-              variant="ghost" 
-              onClick={() => router.push('/admin')}
-              className="mb-4 text-muted-foreground hover:text-foreground hover:bg-white/5 -ml-4"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Volver al Dashboard
-            </Button>
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground flex items-center gap-3">
-              <span className="bg-gradient-to-tr from-primary/20 to-primary/5 p-2 rounded-xl border border-primary/20 text-primary shadow-inner">
-                <Settings className="h-8 w-8" />
-              </span>
-              Gestión de Servicios
-            </h1>
-            <p className="text-muted-foreground mt-2 text-lg">Crea, edita y administra los servicios del catálogo.</p>
+            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Services Management</h1>
+            <p className="text-gray-500 font-light text-sm tracking-wide">
+              Create and manage your professional catalog.
+            </p>
           </div>
-          
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={() => openDialog()} className="h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all font-semibold gap-2">
-                <Plus className="h-5 w-5" />
-                Nuevo Servicio
+          <div className="flex items-center gap-4">
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Button 
+                onClick={() => openDialog()} 
+                className="bg-white text-black hover:bg-gray-200 text-xs tracking-widest uppercase font-light h-12 px-8 rounded-none shadow-xl transition-all"
+              >
+                <Plus className="w-4 h-4 mr-2" /> New Service
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[500px] bg-black/90 backdrop-blur-2xl border-white/10 text-foreground">
-              <form onSubmit={handleSubmit}>
-                <DialogHeader className="mb-6">
-                  <DialogTitle className="text-2xl font-bold flex items-center gap-2">
-                    {editando ? <Edit2 className="h-5 w-5 text-primary" /> : <Sparkles className="h-5 w-5 text-primary" />}
-                    {editando ? 'Editar Servicio' : 'Nuevo Servicio'}
-                  </DialogTitle>
-                  <DialogDescription className="text-muted-foreground">
-                    Completa los detalles del servicio {editando ? 'para actualizarlo' : 'para agregarlo al catálogo'}.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-5 py-2">
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Nombre del Servicio</Label>
-                    <div className="relative">
-                      <Scissors className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <DialogContent className="bg-zinc-900 border-white/10 text-white rounded-none sm:max-w-[500px] p-8">
+                <form onSubmit={handleSubmit}>
+                  <DialogHeader className="mb-8">
+                    <DialogTitle className="text-2xl font-light tracking-widest uppercase">
+                      {editando ? 'Edit Service' : 'New Service'}
+                    </DialogTitle>
+                    <DialogDescription className="text-gray-500 font-light text-xs tracking-widest uppercase mt-2">
+                       Define the details of your professional treatment.
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Service Name</Label>
                       <Input 
                         required
-                        className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary focus-visible:border-primary text-foreground"
-                        placeholder="Ej. Corte Clásico"
+                        className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
+                        placeholder="e.g. Executive Cut"
                         value={form.nombre} 
                         onChange={(e) => setForm({ ...form, nombre: e.target.value })} 
                       />
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label className="text-gray-300">Descripción (Opcional)</Label>
-                    <div className="relative">
-                      <Info className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    
+                    <div className="space-y-2">
+                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Description</Label>
                       <Input 
-                        className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary focus-visible:border-primary text-foreground"
-                        placeholder="Breve descripción del servicio"
+                        className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
+                        placeholder="Brief overview of the experience"
                         value={form.descripcion} 
                         onChange={(e) => setForm({ ...form, descripcion: e.target.value })} 
                       />
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-gray-300">Precio ($)</Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Price ($)</Label>
                         <Input 
                           required
                           type="number" 
-                          min="0"
-                          step="100"
-                          className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary focus-visible:border-primary text-foreground"
-                          placeholder="00.00"
+                          className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
                           value={form.precio} 
                           onChange={(e) => setForm({ ...form, precio: e.target.value })} 
                         />
                       </div>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label className="text-gray-300">Duración (min)</Label>
-                      <div className="relative">
-                        <Clock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <div className="space-y-2">
+                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Duration (min)</Label>
                         <Input 
                           required
                           type="number" 
-                          min="0"
-                          step="5"
-                          className="pl-9 bg-white/5 border-white/10 focus-visible:ring-primary focus-visible:border-primary text-foreground"
-                          placeholder="30"
+                          className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
                           value={form.duracion_minutos} 
                           onChange={(e) => setForm({ ...form, duracion_minutos: e.target.value })} 
                         />
                       </div>
                     </div>
                   </div>
-                </div>
-                
-                <DialogFooter className="mt-8">
-                  <Button 
-                    type="button" 
-                    variant="ghost" 
-                    onClick={() => setDialogOpen(false)}
-                    className="hover:bg-white/5 text-muted-foreground"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={formLoading}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-md shadow-primary/20 min-w-[120px]"
-                  >
-                    {formLoading ? (
-                      <span className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Guardando
-                      </span>
-                    ) : (
-                      editando ? 'Guardar Cambios' : 'Crear Servicio'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  
+                  <DialogFooter className="mt-12 flex flex-col md:flex-row gap-4">
+                    <Button 
+                      type="button" 
+                      variant="ghost" 
+                      onClick={() => setDialogOpen(false)}
+                      className="w-full text-[10px] tracking-widest uppercase font-light hover:text-white hover:bg-white/5 rounded-none"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      disabled={formLoading}
+                      className="w-full bg-white text-black hover:bg-gray-200 text-[10px] tracking-widest uppercase font-light h-12 rounded-none transition-all shadow-lg"
+                    >
+                      {formLoading ? 'Processing...' : (editando ? 'Update Service' : 'Create Service')}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        {/* Services List */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Services List Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {servicios.map((servicio) => (
             <Card 
               key={servicio.id} 
-              className={`bg-white/5 border-white/10 backdrop-blur-xl relative overflow-hidden group transition-all duration-300 ${!servicio.activo ? 'opacity-50 grayscale select-none' : 'hover:border-primary/50 hover:shadow-xl hover:shadow-primary/5'}`}
+              className={`bg-zinc-900/40 border-white/10 rounded-none overflow-hidden relative group transition-all duration-500 hover:bg-zinc-900/60 hover:border-white/30 ${!servicio.activo ? 'opacity-40 grayscale' : ''}`}
             >
-               {/* Accent Line */}
-               {servicio.activo && (
-                  <div className="absolute top-0 left-0 bottom-0 w-1 bg-gradient-to-b from-primary/80 to-primary/20 opacity-0 group-hover:opacity-100 transition-opacity" />
-               )}
-               
-              <CardContent className="p-6">
-                 <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                       <h3 className="text-xl font-bold text-foreground mb-1 flex items-center gap-2">
-                          {servicio.nombre}
-                          {!servicio.activo && <span className="text-[10px] uppercase tracking-wider font-bold bg-white/10 text-muted-foreground px-2 py-0.5 rounded-sm">Inactivo</span>}
-                       </h3>
-                       <p className="text-sm text-muted-foreground mb-4 line-clamp-2 min-h-[40px]">
-                          {servicio.descripcion || 'Sin descripción detallada.'}
-                       </p>
-                       
-                       <div className="flex items-center gap-4 text-sm font-medium mt-auto">
-                          <span className="flex items-center gap-1.5 text-primary bg-primary/10 px-2.5 py-1 rounded-md border border-primary/20">
-                             <DollarSign className="w-4 h-4" />
-                             {servicio.precio}
-                          </span>
-                          <span className="flex items-center gap-1.5 text-gray-400 bg-white/5 px-2.5 py-1 rounded-md border border-white/10">
-                             <Clock className="w-4 h-4" />
-                             {servicio.duracion_minutos} min
-                          </span>
-                       </div>
+              <CardContent className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="p-3 bg-black border border-white/5 rounded-none group-hover:border-white/20 transition-colors">
+                    <Scissors className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+                  </div>
+                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => openDialog(servicio)}
+                      className="h-8 w-8 text-gray-500 hover:text-white hover:bg-white/5 rounded-none"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => toggleActivo(servicio)}
+                      className={`h-8 w-8 rounded-none ${servicio.activo ? 'text-gray-500 hover:text-red-400' : 'text-green-500 hover:text-green-400'}`}
+                    >
+                      {servicio.activo ? <PowerOff className="w-3.5 h-3.5" /> : <Power className="w-3.5 h-3.5" />}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="mb-8">
+                  <h3 className="text-xl font-light tracking-wider uppercase mb-2 group-hover:text-white transition-colors">
+                    {servicio.nombre}
+                  </h3>
+                  <p className="text-gray-500 font-light text-xs leading-relaxed line-clamp-2 h-8">
+                    {servicio.descripcion || 'Professional aesthetic treatment.'}
+                  </p>
+                </div>
+
+                <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-[10px] tracking-widest uppercase font-light text-gray-400">
+                      <Clock className="w-3 h-3" />
+                      {servicio.duracion_minutos} MIN
                     </div>
-                    
-                    <div className="flex flex-col gap-2 shrink-0">
-                      <Button 
-                         variant="ghost" 
-                         size="icon" 
-                         onClick={() => openDialog(servicio)}
-                         className="h-10 w-10 bg-white/5 hover:bg-white/10 border border-white/5 rounded-full"
-                         title="Editar servicio"
-                      >
-                        <Edit2 className="h-4 w-4 text-gray-300" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => toggleActivo(servicio)}
-                        className={`h-10 w-10 rounded-full border ${servicio.activo ? 'bg-red-500/10 text-red-500 hover:bg-red-500/20 hover:text-red-400 border-red-500/20' : 'bg-green-500/10 text-green-500 hover:bg-green-500/20 hover:text-green-400 border-green-500/20'}`}
-                        title={servicio.activo ? 'Desactivar servicio' : 'Activar servicio'}
-                      >
-                        {servicio.activo ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                 </div>
+                  </div>
+                  <div className="text-lg font-light tracking-tighter">
+                    ${servicio.precio}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
         {servicios.length === 0 && !loading && (
-          <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-white/5 border border-white/10 rounded-2xl border-dashed">
-            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center text-primary/50 mb-6">
-              <Settings className="h-10 w-10" />
-            </div>
-            <h3 className="text-2xl font-semibold text-foreground mb-2">No hay servicios</h3>
-            <p className="text-muted-foreground max-w-sm mx-auto mb-6">
-              Aún no creaste ningún servicio para el catálogo. ¡Empezá ahora!
-            </p>
-            <Button onClick={() => openDialog()} className="font-semibold gap-2">
-                <Plus className="h-5 w-5" />
-                Agregar el primer servicio
+          <div className="flex flex-col items-center justify-center py-32 border border-white/10 border-dashed animate-in fade-in zoom-in duration-500">
+            <Settings className="w-12 h-12 text-zinc-900 mb-6" />
+            <p className="text-xs tracking-widest uppercase font-light text-gray-500">Empty Catalog</p>
+            <Button 
+              variant="link" 
+              onClick={() => openDialog()}
+              className="mt-4 text-[10px] tracking-widest uppercase font-light text-white hover:text-gray-300 underline-offset-8"
+            >
+              Add your first professional service
             </Button>
           </div>
         )}
-      </div>
+      </main>
     </div>
   )
 }

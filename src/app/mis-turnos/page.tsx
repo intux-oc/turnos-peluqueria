@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Calendar, Clock, Banknote, CalendarX2, CheckCircle2, XCircle, ArrowLeft } from 'lucide-react'
+import { Calendar, Clock, Banknote, CalendarX2, CheckCircle2, XCircle, ArrowLeft, MoreHorizontal, User as UserIcon } from 'lucide-react'
 
 interface Turno {
   id: string
@@ -117,57 +117,59 @@ export default function MisTurnosPage() {
     }
 
     return (
-      <Card key={turno.id} className="mb-4 bg-white/5 backdrop-blur-md border border-white/10 hover:border-white/20 transition-all duration-300 overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <CardContent className="p-6 relative z-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-3">
-                <h3 className="font-semibold text-xl text-white">{turno.servicio?.nombre}</h3>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${statusStyle}`}>
-                  <StatusIcon className="w-3.5 h-3.5" />
-                  {turno.estado.charAt(0).toUpperCase() + turno.estado.slice(1)}
+      <div key={turno.id} className="bg-zinc-900 border border-white/10 p-6 relative group overflow-hidden">
+        <div className="absolute top-0 left-0 w-1 h-full bg-white opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex items-start gap-4 flex-1">
+            <div className="w-12 h-12 bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+              <StatusIcon className="w-5 h-5 text-gray-400" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-lg font-light tracking-wide">{turno.servicio?.nombre}</h3>
+                <span className={`text-[10px] tracking-widest uppercase px-2 py-0.5 border ${
+                   turno.estado === 'pendiente' ? 'border-gray-500 text-gray-400' : 
+                   turno.estado === 'confirmado' ? 'border-white text-white' : 
+                   'border-red-900/50 text-red-500'
+                }`}>
+                  {turno.estado}
                 </span>
               </div>
-              
-              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
-                <div className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4 text-amber-500/70" />
-                  <span>{fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-500 font-light">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5" /> {fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-500/70" />
-                  <span>{fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</span>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" /> {fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} ({turno.servicio?.duracion_minutos} min)
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Banknote className="w-4 h-4 text-amber-500/70" />
-                  <span>${turno.servicio?.precio} ({turno.servicio?.duracion_minutos} min)</span>
+                <div className="flex items-center gap-2">
+                  <UserIcon className="w-3.5 h-3.5" /> {turno.servicio?.precio ? `$${turno.servicio?.precio}` : 'Price TBD'}
                 </div>
               </div>
-
               {turno.notas && (
-                <div className="mt-2 text-sm bg-white/5 p-3 rounded-md border border-white/5 text-gray-300">
-                  <span className="text-gray-500 text-xs uppercase tracking-wider block mb-1">Notas adicionales</span>
+                <p className="mt-3 text-sm text-gray-400 font-light border-l border-white/20 pl-3">
                   {turno.notas}
-                </div>
-              )}
-            </div>
-            
-            <div className="flex flex-row md:flex-col gap-2 w-full md:w-auto mt-2 md:mt-0">
-              {puedeCancel && (
-                <Button
-                  variant="destructive"
-                  className="w-full md:w-auto bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 border border-red-500/20 transition-all font-medium"
-                  onClick={() => handleCancelar(turno.id)}
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Cancelar Turno
-                </Button>
+                </p>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {puedeCancel ? (
+               <Button 
+                variant="outline" 
+                className="flex-1 md:flex-none h-10 border-white/20 hover:bg-red-900/20 hover:text-red-400 hover:border-red-900/50 rounded-none font-light text-xs tracking-widest uppercase transition-colors"
+                onClick={() => handleCancelar(turno.id)}
+               >
+                 Cancel
+               </Button>
+            ) : (
+                <Button variant="ghost" className="w-10 h-10 p-0 text-gray-500 hover:text-white hover:bg-white/5 rounded-none">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+            )}
+          </div>
+        </div>
+      </div>
     )
   }
 
@@ -180,103 +182,120 @@ export default function MisTurnosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] text-white py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="ghost" 
+            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/perfil')}
+          >
+            <UserIcon className="w-4 h-4 mr-2" /> Profile
+          </Button>
+        </div>
+      </nav>
+
+      <main className="flex-1 max-w-5xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        {/* Header Section */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <Button 
               variant="ghost" 
-              className="mb-2 text-gray-400 hover:text-white hover:bg-white/5 -ml-4"
+              className="mb-6 h-8 px-0 text-gray-500 hover:text-white hover:bg-transparent tracking-widest uppercase text-xs font-light"
               onClick={() => router.push('/')}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Volver al inicio
+              <ArrowLeft className="w-3 h-3 mr-2" /> Back to Home
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-              Mis Turnos
-            </h1>
-            <p className="text-gray-400 mt-1">Gestioná tus próximas reservas y el historial</p>
+            <h1 className="text-4xl font-light tracking-wide mb-2">My Appointments</h1>
+            <p className="text-gray-500 font-light text-sm tracking-wide">
+              Manage your upcoming visits and view history
+            </p>
           </div>
           <Button 
+            className="h-12 px-8 text-xs tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-colors rounded-none flex items-center gap-2"
             onClick={() => router.push('/turnos/nuevo')}
-            className="bg-amber-500 hover:bg-amber-600 text-black font-semibold shadow-lg shadow-amber-500/20 w-full sm:w-auto"
           >
-            <Calendar className="w-4 h-4 mr-2" />
-            Nuevo Turno
+            <Calendar className="w-4 h-4" /> Book New
           </Button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex p-1 bg-white/5 backdrop-blur-md border border-white/10 rounded-lg w-full sm:w-fit">
+        {/* Custom Tabs */}
+        <div className="mb-8 border-b border-white/10 flex gap-8">
           <button
             onClick={() => setActiveTab('proximos')}
-            className={`flex-1 sm:px-8 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-              activeTab === 'proximos' 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            className={`pb-4 text-sm font-light tracking-wide uppercase transition-colors relative ${
+              activeTab === 'proximos' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            Próximos ({turnosProximos.length})
+            Upcoming ({turnosProximos.length})
+            {activeTab === 'proximos' && (
+              <span className="absolute bottom-0 left-0 w-full h-px bg-white" />
+            )}
           </button>
           <button
             onClick={() => setActiveTab('pasados')}
-            className={`flex-1 sm:px-8 py-2.5 rounded-md text-sm font-medium transition-all duration-200 ${
-              activeTab === 'pasados' 
-                ? 'bg-white/10 text-white shadow-sm' 
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            className={`pb-4 text-sm font-light tracking-wide uppercase transition-colors relative ${
+              activeTab === 'pasados' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            Historial ({turnosPasados.length})
+            History ({turnosPasados.length})
+            {activeTab === 'pasados' && (
+              <span className="absolute bottom-0 left-0 w-full h-px bg-white" />
+            )}
           </button>
         </div>
 
-        {/* Content */}
+        {/* Content Area */}
         <div className="min-h-[400px]">
           {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400 space-y-4">
-              <div className="w-8 h-8 rounded-full border-2 border-amber-500 border-t-transparent animate-spin" />
-              <p>Cargando tus turnos...</p>
-            </div>
+             <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-light space-y-4">
+               <div className="w-8 h-8 rounded-full border border-gray-600 border-t-white animate-spin" />
+               <p className="text-xs uppercase tracking-widest">Loading appointments...</p>
+             </div>
           ) : (
-            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              {activeTab === 'proximos' && (
-                turnosProximos.length > 0 ? (
-                  turnosProximos.map(renderTurno)
-                ) : (
-                  <Card className="bg-white/5 border-dashed border-white/10 flex flex-col items-center justify-center py-20 text-center">
-                    <CalendarX2 className="w-16 h-16 text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No tenés turnos próximos</h3>
-                    <p className="text-gray-400 max-w-sm mb-6">
-                      ¿Necesitás un corte de pelo o arreglo de barba? Reservá tu próximo turno ahora.
-                    </p>
-                    <Button 
-                      onClick={() => router.push('/turnos/nuevo')}
-                      className="bg-white/10 hover:bg-white/20 text-white border border-white/5"
-                    >
-                      Reservar turno
-                    </Button>
-                  </Card>
-                )
-              )}
-              {activeTab === 'pasados' && (
-                turnosPasados.length > 0 ? (
-                  turnosPasados.map(renderTurno)
-                ) : (
-                  <Card className="bg-white/5 border-dashed border-white/10 flex flex-col items-center justify-center py-20 text-center">
-                    <Clock className="w-16 h-16 text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">No hay historial</h3>
-                    <p className="text-gray-400">
-                      Todavía no tenés turnos pasados ni cancelados en tu historial.
-                    </p>
-                  </Card>
-                )
-              )}
-            </div>
+             <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+               {activeTab === 'proximos' && (
+                 turnosProximos.length > 0 ? (
+                   turnosProximos.map(renderTurno)
+                 ) : (
+                   <div className="border border-white/10 border-dashed p-12 text-center bg-zinc-900/30">
+                     <CalendarX2 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                     <h3 className="text-lg font-light tracking-wide text-white mb-2">No Upcoming Appointments</h3>
+                     <p className="text-gray-500 font-light text-sm mb-6 max-w-md mx-auto">
+                       You don't have any future bookings. Ready for a fresh look?
+                     </p>
+                     <Button 
+                       variant="outline"
+                       className="h-10 border-white/20 hover:bg-white hover:text-black rounded-none font-light text-xs tracking-widest uppercase transition-colors"
+                       onClick={() => router.push('/turnos/nuevo')}
+                     >
+                       Book Now
+                     </Button>
+                   </div>
+                 )
+               )}
+               {activeTab === 'pasados' && (
+                 turnosPasados.length > 0 ? (
+                   turnosPasados.map(renderTurno)
+                 ) : (
+                   <div className="border border-white/10 border-dashed p-12 text-center bg-zinc-900/30">
+                     <Clock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                     <h3 className="text-lg font-light tracking-wide text-white mb-2">No History</h3>
+                     <p className="text-gray-500 font-light text-sm mb-6 max-w-md mx-auto">
+                       Your past appointments will appear here.
+                     </p>
+                   </div>
+                 )
+               )}
+             </div>
           )}
         </div>
-      </div>
+      </main>
     </div>
   )
 }
