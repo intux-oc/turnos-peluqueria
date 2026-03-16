@@ -137,11 +137,17 @@ export default function MisTurnosPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-2xl mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Mis Turnos</h1>
-          <Button onClick={() => router.push('/turnos/nuevo')}>
-            Nuevo Turno
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => router.push('/')}>
+              🏠 Inicio
+            </Button>
+            <Button variant="ghost" onClick={() => router.push('/turnos/nuevo')}>
+              ➕ Nuevo Turno
+            </Button>
+          </div>
         </div>
+
+        <h1 className="text-2xl font-bold">Mis Turnos</h1>
 
         <div className="flex gap-2 mb-6">
           <Button
