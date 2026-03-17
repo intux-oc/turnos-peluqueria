@@ -112,8 +112,12 @@
   }
 }
 @layer utilities {
+  .glass-effect {
+    @apply backdrop-blur-md bg-black/40 border border-white/10;
+  }
+
   @media (prefers-reduced-transparency) {
-    .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur-3xl {
+    .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur-3xl, .glass-effect {
       backdrop-filter: none !important;
       background-color: rgba(0, 0, 0, 0.9) !important;
     }

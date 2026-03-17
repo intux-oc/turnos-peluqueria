@@ -22,6 +22,18 @@ ALTER TABLE subscriptions DROP CONSTRAINT IF EXISTS subscriptions_status_check;
 ALTER TABLE subscriptions ADD CONSTRAINT subscriptions_status_check 
   CHECK (status IN ('pending', 'active', 'expired', 'canceled', 'past_due'));
 
--- 4. ÍNDICES GENERALES PARA MEJORAR PERFORMANCE
+-- 4. AUTOMACIÓN: Verificar suscripciones expiradas diariamente
+-- Activar la extensión pg_cron (requiere permisos de superusuario)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Crear un cron job que corra todos los días a la medianoche
+-- Nota: Si pg_cron no está disponible en tu plan de Supabase, podés omitir esto.
+SELECT cron.schedule('verificar_suscripciones_diario', '0 0 * * *', $$
+  UPDATE public.subscriptions
+  SET status = 'past_due'
+  WHERE status = 'active' AND current_period_end < NOW();
+$$);
+
+-- 5. ÍNDICES GENERALES PARA MEJORAR PERFORMANCE
 CREATE INDEX IF NOT EXISTS idx_turnos_fecha ON turnos(fecha_hora);
 CREATE INDEX IF NOT EXISTS idx_turnos_estado ON turnos(estado);
