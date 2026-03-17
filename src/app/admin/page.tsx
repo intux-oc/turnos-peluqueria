@@ -4,56 +4,72 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { CalendarClock, CheckCircle2, Clock, Settings, Users, Calendar as CalendarIcon, DollarSign, Link as LinkIcon } from 'lucide-react'
 
 interface Turno {
   id: string
   fecha_hora: string
   estado: string
-  cliente: {
-    full_name: string
-    email: string
-  }
-  servicio: {
-    nombre: string
-    precio: number
-  }
+  cliente: { full_name: string; email: string } | null
+  servicio: { nombre: string; precio: number } | null
+}
+
+interface Barbershop {
+  id: string
+  name: string
+  slug: string
 }
 
 export default function AdminPage() {
   const router = useRouter()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
+  const [barbershop, setBarbershop] = useState<Barbershop | null>(null)
   const [turnos, setTurnos] = useState<Turno[]>([])
-  const [servicios, setServicios] = useState<any[]>([])
 
   useEffect(() => {
     const checkUser = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
-      }
-      
-      // Check if admin (simple check - in production use role-based)
-      if (user.email !== 'admin@intux.com' && user.email !== 'admin@peluqueria.com') {
-        toast.error('No tenés acceso a esta sección')
+      if (!user) { router.push('/login'); return }
+
+      // Verify role is admin or superadmin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+      if (!profile || !['admin', 'superadmin'].includes(profile.role)) {
+        toast.error('Acceso denegado', { description: 'No tenés permisos para ver esta sección.' })
         router.push('/')
         return
       }
-      
-      setUser(user)
-      fetchData()
+
+      // Load the barbershop owned by this user
+      const { data: shop } = await supabase
+        .from('barbershops')
+        .select('id, name, slug')
+        .eq('owner_id', user.id)
+        .single()
+
+      if (!shop) {
+        // Admin without a barbershop yet — redirect to registration
+        toast.error('Peluquería no encontrada', { description: 'Primero registrá tu peluquería.' })
+        router.push('/planes')
+        return
+      }
+
+      setBarbershop(shop)
+      fetchData(shop.id)
     }
     checkUser()
-  }, [supabase, router])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  const fetchData = async () => {
+  const fetchData = async (barbershopId: string) => {
     setLoading(true)
-    
-    // Fetch today's turns
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
@@ -61,42 +77,27 @@ export default function AdminPage() {
 
     const { data: turnsData } = await supabase
       .from('turnos')
-      .select(`
-        id,
-        fecha_hora,
-        estado,
-        cliente:profiles!turnos_cliente_id_fkey(full_name, email),
-        servicio:servicios(nombre, precio)
-      `)
+      .select(`id, fecha_hora, estado, cliente:profiles!turnos_cliente_id_fkey(full_name, email), servicio:servicios(nombre, precio)`)
+      .eq('barbershop_id', barbershopId)
       .gte('fecha_hora', today.toISOString())
       .lt('fecha_hora', tomorrow.toISOString())
       .order('fecha_hora')
 
     if (turnsData) setTurnos(turnsData as any)
-
-    // Fetch servicios
-    const { data: servData } = await supabase
-      .from('servicios')
-      .select('*')
-      .order('nombre')
-    
-    if (servData) setServicios(servData)
-
     setLoading(false)
   }
 
   const actualizarEstado = async (turnoId: string, nuevoEstado: string) => {
-    try {
-      const { error } = await supabase
-        .from('turnos')
-        .update({ estado: nuevoEstado })
-        .eq('id', turnoId)
+    const { error } = await supabase
+      .from('turnos')
+      .update({ estado: nuevoEstado })
+      .eq('id', turnoId)
 
-      if (error) throw error
-      toast.success('Estado actualizado')
-      fetchData()
-    } catch (error: any) {
-      toast.error(error.message)
+    if (error) {
+      toast.error('Ocurrió un error', { description: error.message })
+    } else {
+      toast.success('Estado actualizado', { description: `El turno ahora está marcado como ${nuevoEstado}.` })
+      if (barbershop) fetchData(barbershop.id)
     }
   }
 
@@ -105,102 +106,201 @@ export default function AdminPage() {
     pendientes: turnos.filter(t => t.estado === 'pendiente').length,
     confirmados: turnos.filter(t => t.estado === 'confirmado').length,
     completados: turnos.filter(t => t.estado === 'completado').length,
+    recaudacion: turnos.filter(t => t.estado === 'completado').reduce((acc, t) => acc + (t.servicio?.precio || 0), 0)
   }
 
-  if (!user || loading) return <div className="min-h-screen flex items-center justify-center">Cargando...</div>
+  if (!barbershop || loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <h1 className="text-2xl font-bold mb-8">Panel de Administración</h1>
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      {/* Navigation */}
+      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
+          Peluquería
+        </div>
+        <div className="flex items-center gap-6">
+          <Button 
+            variant="ghost" 
+            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/admin/servicios')}
+          >
+            <Settings className="w-4 h-4 mr-2" /> Services
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
+            onClick={() => router.push('/perfil')}
+          >
+            <Users className="w-4 h-4 mr-2" /> Profile
+          </Button>
+        </div>
+      </nav>
 
-        {/* Stats */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold">{stats.total}</p>
-              <p className="text-gray-500">Total Hoy</p>
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        
+        {/* Header Section */}
+        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Admin Dashboard</h1>
+            <p className="text-gray-500 font-light text-sm tracking-wide capitalize">
+              {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              className="text-[10px] tracking-widest uppercase font-light text-gray-500 hover:text-white hover:bg-white/5 h-10 px-4 rounded-none border border-white/10 flex items-center gap-2"
+              onClick={() => window.open(`/b/${barbershop.slug}`, '_blank')}
+            >
+              <LinkIcon className="w-3.5 h-3.5" /> /b/{barbershop.slug}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all"
+              onClick={() => fetchData(barbershop.id)}
+            >
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Appointments</p>
+                <CalendarIcon className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.total}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-yellow-600">{stats.pendientes}</p>
-              <p className="text-gray-500">Pendientes</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Pending</p>
+                <Clock className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.pendientes}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-green-600">{stats.confirmados}</p>
-              <p className="text-gray-500">Confirmados</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Confirmed</p>
+                <CheckCircle2 className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">{stats.confirmados}</p>
             </CardContent>
           </Card>
-          <Card>
-            <CardContent className="pt-4">
-              <p className="text-2xl font-bold text-blue-600">{stats.completados}</p>
-              <p className="text-gray-500">Completados</p>
+
+          <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Revenue</p>
+                <DollarSign className="w-4 h-4 text-gray-600" />
+              </div>
+              <p className="text-3xl font-light">${stats.recaudacion}</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Today's appointments */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Turnos de Hoy</CardTitle>
-          </CardHeader>
-          <CardContent>
+        {/* Schedule Board */}
+        <div className="space-y-6">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
+            <h2 className="text-sm tracking-widest uppercase font-light text-white">Daily Agenda</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+              <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">Live Updates</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
             {turnos.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">No hay turnos para hoy</p>
+              <div className="py-24 px-6 border border-white/10 border-dashed text-center">
+                <CalendarClock className="w-10 h-10 text-gray-600 mx-auto mb-4" />
+                <p className="text-sm font-light text-gray-500 tracking-wide">No appointments scheduled for today.</p>
+              </div>
             ) : (
-              <div className="space-y-3">
-                {turnos.map((turno) => (
-                  <div key={turno.id} className="flex justify-between items-center p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{turno.cliente?.full_name || 'Sin nombre'}</p>
-                      <p className="text-sm text-gray-500">{turno.cliente?.email}</p>
-                      <p className="text-sm">{turno.servicio?.nombre} - ${turno.servicio?.precio}</p>
-                      <p className="text-sm text-gray-400">
-                        {new Date(turno.fecha_hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+              turnos.map((turno) => (
+                <div 
+                  key={turno.id}
+                  className="flex flex-col md:flex-row md:items-center justify-between p-6 border border-white/10 bg-zinc-900/30 hover:bg-zinc-900/50 transition-all gap-6"
+                >
+                  <div className="flex items-center gap-8">
+                    <div className="h-full border-r border-white/10 pr-8">
+                       <p className="text-2xl font-light tracking-tighter">
+                         {new Date(turno.fecha_hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <span className={`px-3 py-1 rounded-full text-sm ${
-                        turno.estado === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        turno.estado === 'confirmado' ? 'bg-green-100 text-green-800' :
-                        turno.estado === 'completado' ? 'bg-blue-100 text-blue-800' :
-                        'bg-red-100 text-red-800'
-                      }`}>
-                        {turno.estado}
-                      </span>
+                    
+                    <div>
+                      <h4 className="text-lg font-light tracking-wide text-white mb-1">
+                        {turno.cliente?.full_name || 'N/A'}
+                      </h4>
+                      <div className="flex items-center gap-4">
+                        <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">
+                          {turno.servicio?.nombre}
+                        </span>
+                        <span className="text-[10px] tracking-widest uppercase font-light text-white">
+                          ${turno.servicio?.precio}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6">
+                    <div className={`text-[10px] tracking-widest uppercase font-light px-3 py-1 border transition-all ${
+                      turno.estado === 'pendiente' ? 'border-gray-500/50 text-gray-400' :
+                      turno.estado === 'confirmado' ? 'border-white text-white' :
+                      turno.estado === 'completado' ? 'border-white/10 bg-white/5 text-gray-500' :
+                      'border-red-500/50 text-red-500'
+                    }`}>
+                      {turno.estado}
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
                       {turno.estado === 'pendiente' && (
-                        <Button size="sm" onClick={() => actualizarEstado(turno.id, 'confirmado')}>
-                          Confirmar
+                        <Button 
+                          onClick={() => actualizarEstado(turno.id, 'confirmado')}
+                          className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
+                        >
+                          Confirm
                         </Button>
                       )}
                       {turno.estado === 'confirmado' && (
-                        <Button size="sm" variant="outline" onClick={() => actualizarEstado(turno.id, 'completado')}>
-                          Completar
+                        <Button 
+                          onClick={() => actualizarEstado(turno.id, 'completado')}
+                          className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
+                        >
+                          Complete
                         </Button>
                       )}
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 text-gray-600 hover:text-white hover:bg-white/5 rounded-none"
+                        title="Cancel Appointment"
+                        onClick={() => actualizarEstado(turno.id, 'cancelado')}
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))
             )}
-          </CardContent>
-        </Card>
-
-        {/* Quick link to manage servicios */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Gestión Rápida</CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-4">
-            <Button onClick={() => router.push('/admin/servicios')}>
-              Administrar Servicios ({servicios.length})
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </main>
     </div>
   )
 }

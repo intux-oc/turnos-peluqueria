@@ -4,13 +4,14 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Toaster } from '@/components/ui/sonner'
+import { User } from '@supabase/supabase-js'
+import { Calendar, User as UserIcon, LogIn, ChevronRight, Star, Clock, CheckCircle, Scissors, Sparkles } from 'lucide-react'
 
 export default function Home() {
   const router = useRouter()
   const supabase = createClient()
-  const [user, setUser] = useState<any>(null)
+  const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -18,194 +19,219 @@ export default function Home() {
       setUser(user)
       setLoading(false)
     })
-  }, [])
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.refresh()
-    setUser(null)
-  }
+  }, [supabase.auth])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-        <div className="animate-pulse text-white text-xl">Cargando...</div>
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Toaster />
+    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      <Toaster theme="dark" />
       
-      {/* Header */}
-      <header className="backdrop-blur-md bg-white/10 border-b border-white/10">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            ✂️ <span className="hidden sm:inline">Peluquería</span>
-          </h1>
-          <nav className="flex gap-2">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="text-2xl font-light tracking-widest uppercase">Peluquería</div>
+          
+          <div className="flex items-center gap-6">
             {user ? (
-              <>
-                <Button 
-                  variant="ghost" 
-                  className="text-white hover:bg-white/20" 
-                  onClick={() => router.push('/mis-turnos')}
-                >
-                  Mis Turnos
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="text-white hover:bg-white/20" 
-                  onClick={() => router.push('/perfil')}
-                >
-                  Perfil
-                </Button>
-                {(user.email === 'admin@intux.com' || user.email === 'admin@peluqueria.com') && (
-                  <Button 
-                    variant="ghost" 
-                    className="text-white hover:bg-white/20" 
-                    onClick={() => router.push('/admin')}
-                  >
-                    Admin
-                  </Button>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="bg-white/10 text-white border-white/20 hover:bg-white/20"
-                  onClick={handleSignOut}
-                >
-                  Cerrar
-                </Button>
-              </>
+              <Button 
+                variant="ghost" 
+                className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-sm"
+                onClick={() => router.push('/perfil')}
+              >
+                <UserIcon className="w-4 h-4 mr-2" />
+                Mi Perfil
+              </Button>
             ) : (
-              <>
-                <Button 
-                  variant="ghost" 
-                  className="text-white hover:bg-white/20" 
-                  onClick={() => router.push('/login')}
-                >
-                  Iniciar Sesión
-                </Button>
-                <Button 
-                  className="bg-purple-500 hover:bg-purple-600 text-white"
-                  onClick={() => router.push('/login')}
-                >
-                  Reservar Turno
-                </Button>
-              </>
+              <Button 
+                variant="ghost" 
+                className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-sm"
+                onClick={() => router.push('/login')}
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Ingresar
+              </Button>
             )}
-          </nav>
+            
+            <Button 
+              className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest text-sm px-8"
+              onClick={() => user ? router.push('/turnos') : router.push('/login')}
+            >
+              Agendar Turno
+            </Button>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      {/* Hero */}
-      <main>
-        <section className="py-20 px-4 text-center">
-          <h2 className="text-5xl md:text-6xl font-bold text-white mb-6">
-            Tu estilo, <span className="text-purple-400">nuestra pasión</span>
-          </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Reservá tu turno de manera fácil y rápida. Te esperamos con los mejores profesionales y servicios de peluquería.
+      {/* Hero Section */}
+      <section className="relative pt-40 pb-32 px-6 flex flex-col items-center justify-center min-h-[90vh] text-center overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/2 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm tracking-widest uppercase mb-12 text-gray-400">
+            <span className="w-2 h-2 rounded-full bg-white" />
+            Premium Hair Care
+          </div>
+          
+          <h1 className="text-6xl md:text-8xl font-light tracking-tighter mb-8 leading-tight">
+            ELEVATE YOUR<br />
+            <span className="font-serif italic text-gray-400">Style</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl font-light leading-relaxed">
+            Experience the finest hair and grooming services in a minimalist, premium environment. Book your exclusive session today.
           </p>
-          <Button 
-            size="lg" 
-            className="bg-purple-500 hover:bg-purple-600 text-white px-8 py-6 text-lg"
-            onClick={() => user ? router.push('/turnos/nuevo') : router.push('/login')}
-          >
-            {user ? '📅 Reservar Ahora' : '🚀 Reservar Turno'}
-          </Button>
-        </section>
-
-        {/* Features */}
-        <section className="py-16 px-4 bg-white/5">
-          <div className="max-w-6xl mx-auto">
-            <h3 className="text-3xl font-bold text-white text-center mb-12">
-              ¿Por qué elegirnos?
-            </h3>
-            <div className="grid md:grid-cols-3 gap-8">
-              <Card className="bg-white/10 border-white/20 text-white backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    ⏰ <span>Agenda 24/7</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Reservá cuando quieras, desde cualquier lugar. Sin llamar, sin esperar.</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 border-white/20 text-white backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    ✨ <span>Profesionales</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Nuestro equipo de expertos te recomienda el mejor look para vos.</p>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/10 border-white/20 text-white backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    🎁 <span>Beneficios</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Descuentos exclusivos para clientes frecuentes y referidos.</p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </section>
-
-        {/* Services Preview */}
-        <section className="py-16 px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h3 className="text-3xl font-bold text-white mb-8">
+          
+          <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto">
+            <Button 
+              size="lg" 
+              className="h-16 px-10 text-sm tracking-widest uppercase bg-white text-black hover:bg-gray-200 transition-all hover:scale-105"
+              onClick={() => user ? router.push('/turnos') : router.push('/login')}
+            >
+              <Calendar className="w-5 h-5 mr-3" />
+              {user ? 'Agendar mi turno' : 'Ingresar para Reservar'}
+            </Button>
+            
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="h-16 px-10 text-sm tracking-widest uppercase border-white/20 hover:bg-white hover:text-black transition-all"
+              onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               Nuestros Servicios
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                { name: 'Corte', icon: '✂️' },
-                { name: 'Barba', icon: '🧔' },
-                { name: 'Color', icon: '🎨' },
-                { name: 'Mechas', icon: '✨' },
-                { name: 'Tratamiento', icon: '💆' },
-                { name: 'Peinado', icon: '💇' },
-              ].map((service) => (
-                <div 
-                  key={service.name}
-                  className="bg-white/10 rounded-xl p-6 text-white hover:bg-white/20 transition cursor-pointer"
-                  onClick={() => user ? router.push('/turnos/nuevo') : router.push('/login')}
-                >
-                  <span className="text-4xl block mb-2">{service.icon}</span>
-                  <span className="font-medium">{service.name}</span>
-                </div>
-              ))}
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="py-32 bg-zinc-950 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
+            <div className="max-w-2xl">
+              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-6">SERVICES</h2>
+              <p className="text-gray-400 text-lg md:text-xl font-light leading-relaxed">
+                Curated treatments tailored to your unique features and lifestyle. We use only premium products for exceptional results.
+              </p>
             </div>
           </div>
-        </section>
 
-        {/* CTA */}
-        <section className="py-20 px-4 text-center">
-          <h3 className="text-2xl font-bold text-white mb-4">
-            ¿Listo para verte increíble?
-          </h3>
-          <Button 
-            size="lg" 
-            className="bg-purple-500 hover:bg-purple-600 text-white px-8"
-            onClick={() => user ? router.push('/turnos/nuevo') : router.push('/login')}
-          >
-            {user ? 'Ver Mis Turnos' : 'Crear Cuenta'}
-          </Button>
-        </section>
-      </main>
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Service 1 */}
+            <div className="group border border-white/10 p-10 hover:bg-white/5 transition-colors duration-500">
+              <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
+                <Scissors className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
+              </div>
+              <h3 className="text-2xl font-light mb-4 tracking-wide">Signature Cut</h3>
+              <p className="text-gray-400 font-light leading-relaxed mb-8">
+                Personalized consultation, precision cut, and styling tailored to your face shape and hair texture.
+              </p>
+              <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
+                Explore
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Service 2 */}
+            <div className="group border border-white/10 p-10 hover:bg-white/5 transition-colors duration-500">
+              <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
+                <Sparkles className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
+              </div>
+              <h3 className="text-2xl font-light mb-4 tracking-wide">Color & Tone</h3>
+              <p className="text-gray-400 font-light leading-relaxed mb-8">
+                Bespoke color services ranging from subtle highlights to complete transformations using premium dyes.
+              </p>
+              <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
+                Explore
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Service 3 */}
+            <div className="group border border-white/10 p-10 hover:bg-white/5 transition-colors duration-500">
+              <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
+                <Star className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
+              </div>
+              <h3 className="text-2xl font-light mb-4 tracking-wide">Styling & Finish</h3>
+              <p className="text-gray-400 font-light leading-relaxed mb-8">
+                Professional blowouts and styling for special events or when you simply want to look your absolute best.
+              </p>
+              <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
+                Explore
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Highlights / Features */}
+      <section className="py-32 bg-black border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid md:grid-cols-2 gap-20 items-center">
+            <div>
+              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-10 leading-tight">
+                THE PELUQUERÍA<br />EXPERIENCE
+              </h2>
+              
+              <div className="space-y-8">
+                <div className="flex gap-6">
+                  <div className="mt-1">
+                    <CheckCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-light mb-2">Expert Stylists</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">Our team consists of highly trained professionals dedicated to their craft.</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-6">
+                  <div className="mt-1">
+                    <CheckCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-light mb-2">Premium Products</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">We exclusively use top-tier, salon-grade products for all our treatments.</p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-6">
+                  <div className="mt-1">
+                    <Clock className="w-6 h-6 text-white" strokeWidth={1.5} />
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-light mb-2">Seamless Booking</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">Manage your appointments effortlessly through our streamlined digital platform.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="hidden md:flex justify-end">
+              <div className="w-full max-w-md aspect-4/5 bg-zinc-900 border border-white/10 relative overflow-hidden group">
+                 {/* Placeholder for an aesthetic salon image */}
+                 <div className="absolute inset-0 bg-linear-to-tr from-black/80 to-transparent z-10" />
+                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center w-32 h-32 rounded-full border border-white/20 group-hover:scale-110 transition-transform duration-700 z-20">
+                    <span className="text-xs tracking-widest uppercase font-light text-white/70">Est. 2024</span>
+                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-white/10 text-center text-gray-400">
-        <p>© 2026 Peluquería. Todos los derechos reservados.</p>
+      <footer className="py-12 border-t border-white/10 bg-black text-center">
+        <p className="text-gray-500 font-light text-sm tracking-widest uppercase">
+          &copy; {new Date().getFullYear()} Peluquería. All rights reserved.
+        </p>
       </footer>
     </div>
   )
