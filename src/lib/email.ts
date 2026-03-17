@@ -30,17 +30,18 @@ export const sendEmail = async ({
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Turnos Peluquería <onboarding@resend.dev>', // Cambiar por dominio propio en producción
+      from: 'Turnos Peluquería <onboarding@resend.dev>', // Dominio de prueba (restringido al email de registro)
       to,
       subject,
       html,
     });
 
     if (error) {
-      console.error('Error sending email:', error);
+      console.error('Resend Error Details:', JSON.stringify(error, null, 2));
       return { success: false, error };
     }
 
+    console.log('Email sent successfully:', data?.id);
     return { success: true, data };
   } catch (error) {
     console.error('Unexpected email error:', error);
