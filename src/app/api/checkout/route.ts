@@ -18,15 +18,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Peluquería no encontrada' }, { status: 404 })
     }
 
-    // 2. Definir planes (esto podría estar en la DB, pero lo hardcodeamos para el MVP)
-    const plans: Record<string, { title: string, price: number }> = {
-      'mensual': { title: 'Plan Mensual SaaS', price: 5000 },
-      'anual': { title: 'Plan Anual SaaS', price: 50000 }
-    }
+    // 2. Obtener planes desde la DB (más flexible que hardcoded)
+    const { data: plan, error: planError } = await supabase
+      .from('saas_plans')
+      .select('*')
+      .eq('id', planId)
+      .eq('active', true)
+      .single()
 
-    const plan = plans[planId]
-    if (!plan) {
-      return NextResponse.json({ error: 'Plan no válido' }, { status: 400 })
+    if (planError || !plan) {
+      return NextResponse.json({ error: 'Plan no válido o inactivo' }, { status: 400 })
     }
 
     // 3. Configurar Mercado Pago con el token del SUPERADMIN (desde env)
@@ -40,9 +41,9 @@ export async function POST(request: Request) {
     const body = {
       items: [
         {
-          id: planId,
-          title: plan.title,
-          unit_price: plan.price,
+          id: plan.id,
+          title: plan.name,
+          unit_price: Number(plan.price),
           quantity: 1,
           currency_id: 'ARS'
         }
@@ -53,14 +54,14 @@ export async function POST(request: Request) {
         pending: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/suscripcion?status=pending`
       },
       auto_return: 'approved',
-      external_reference: barbershopId, // Usamos barbershopId para el webhook
+      external_reference: barbershopId,
       notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhooks/mercadopago`
     }
 
     const response = await preference.create({ body })
 
-    // 5. Crear registro de suscripción pendiente en la DB
-    await supabase
+    // 5. Crear registro de suscripción en la DB (con manejo de errores)
+    const { error: subError } = await supabase
       .from('subscriptions')
       .insert({
         barbershop_id: barbershopId,
@@ -69,6 +70,13 @@ export async function POST(request: Request) {
         mp_preference_id: response.id,
         amount: plan.price
       })
+
+    if (subError) {
+      console.error('Error inserting subscription:', subError)
+      return NextResponse.json({ 
+        error: 'Error al procesar la solicitud. Por favor, intentalo de nuevo más tarde.' 
+      }, { status: 500 })
+    }
 
     return NextResponse.json({ id: response.id, init_point: response.init_point })
 

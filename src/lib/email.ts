@@ -1,4 +1,6 @@
 import { Resend } from 'resend';
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 let resendClient: Resend | null = null;
 
@@ -30,7 +32,7 @@ export const sendEmail = async ({
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Turnos Peluquería <onboarding@resend.dev>', // Dominio de prueba (restringido al email de registro)
+      from: 'Stitch <onboarding@resend.dev>', // Dominio de prueba
       to,
       subject,
       html,
@@ -52,11 +54,14 @@ export const sendEmail = async ({
 export const getConfirmationTemplate = (data: {
   customerName: string;
   serviceName: string;
-  date: string;
+  date: Date | string;
   time: string;
   barbershopName: string;
   address?: string;
 }) => {
+  const dateObj = typeof data.date === 'string' ? new Date(data.date) : data.date;
+  const formattedDate = format(dateObj, "EEEE d 'de' MMMM", { locale: es });
+
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; padding: 40px; border: 1px solid #333;">
       <h1 style="font-weight: 300; letter-spacing: 2px; text-transform: uppercase;">Reserva Confirmada</h1>
@@ -66,7 +71,7 @@ export const getConfirmationTemplate = (data: {
       <div style="background-color: #111; padding: 20px; border: 1px solid #222; margin: 25px 0;">
         <p style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #555; letter-spacing: 1px;">Detalles del Servicio</p>
         <p style="margin: 0; font-size: 18px; font-weight: 300;">${data.serviceName}</p>
-        <p style="margin: 10px 0 0 0; font-size: 14px; color: #aaa;">${data.date} a las ${data.time}</p>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #aaa; text-transform: capitalize;">${formattedDate} a las ${data.time}</p>
         ${data.address ? `<p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Dirección: ${data.address}</p>` : ''}
       </div>
 
@@ -75,7 +80,7 @@ export const getConfirmationTemplate = (data: {
       </p>
       <hr style="border: 0; border-top: 1px solid #222; margin: 30px 0;">
       <p style="text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
-        Impulsado por Turnos Peluquería SaaS
+        Impulsado por Stitch
       </p>
     </div>
   `;
@@ -89,22 +94,22 @@ export const getSubscriptionTemplate = (data: {
 }) => {
   return `
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; background-color: #000; color: #fff; padding: 40px; border: 1px solid #333;">
-      <h1 style="font-weight: 300; letter-spacing: 2px; text-transform: uppercase; color: #f59e0b;">Suscripción Activada</h1>
+      <h1 style="font-weight: 300; letter-spacing: 2px; text-transform: uppercase;">Suscripción Activada</h1>
       <p style="color: #888; font-size: 14px;">Hola,</p>
-      <p style="line-height: 1.6;">Gracias por confiar en nuestra plataforma. Tu suscripción para <strong>${data.barbershopName}</strong> ya está activa.</p>
+      <p style="line-height: 1.6;">La suscripción para <strong>${data.barbershopName}</strong> ya está activa.</p>
       
       <div style="background-color: #111; padding: 20px; border: 1px solid #222; margin: 25px 0;">
         <p style="margin: 0 0 10px 0; font-size: 12px; text-transform: uppercase; color: #555; letter-spacing: 1px;">Detalles del Plan</p>
         <p style="margin: 0; font-size: 18px; font-weight: 300;">${data.planName}</p>
-        <p style="margin: 10px 0 0 0; font-size: 14px; color: #aaa;">Monto pagado: $${data.amount}</p>
-        <p style="margin: 5px 0 0 0; font-size: 12px; color: #666;">Válido hasta: ${data.endDate}</p>
+        <p style="margin: 10px 0 0 0; font-size: 14px; color: #aaa;">Vence el: ${data.endDate}</p>
+        <p style="margin: 5px 0 0 0; font-size: 14px; color: #fff;">Monto: $${data.amount}</p>
       </div>
 
-      <p style="line-height: 1.6;">Ya puedes acceder a todas las funcionalidades del panel administrativo y recibir turnos de tus clientes.</p>
+      <p style="line-height: 1.6;">Ya podés acceder a todas las funcionalidades premium desde tu panel de control.</p>
       
       <hr style="border: 0; border-top: 1px solid #222; margin: 30px 0;">
       <p style="text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
-        Turnos Peluquería SaaS - Sistema de Gestión Profesional
+        Gracias por elegir Stitch
       </p>
     </div>
   `;
