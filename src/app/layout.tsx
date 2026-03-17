@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NavBar } from "@/components/nav-bar";
 import { RegisterSW } from "@/components/RegisterSW";
+import { Footer } from "@/components/Footer";
 
 const outfit = Outfit({
   variable: "--font-sans",
@@ -52,9 +53,10 @@ export default function RootLayout({
         >
           <RegisterSW />
           <NavBar />
-          <main className="flex-1 flex flex-col pt-20">
+          <main className="flex-1 flex flex-col pt-16">
             {children}
           </main>
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
