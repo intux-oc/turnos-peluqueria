@@ -3,7 +3,18 @@ import { createClient } from '@/lib/supabase/server'
 import { MercadoPagoConfig, Payment } from 'mercadopago'
 import { sendEmail, getSubscriptionTemplate } from '@/lib/email'
 
+import { headers } from 'next/headers'
+
 export async function POST(request: Request) {
+  const requestHeaders = await headers()
+  const signature = requestHeaders.get('x-signature')
+  const secret = process.env.MP_WEBHOOK_SECRET
+
+  // Validación de firma/secreto
+  if (secret && signature !== secret) {
+    return NextResponse.json({ error: 'Firma inválida' }, { status: 403 })
+  }
+
   const { searchParams } = new URL(request.url)
   const type = searchParams.get('type')
   const dataId = searchParams.get('data.id')
@@ -68,11 +79,12 @@ export async function POST(request: Request) {
           })
         }
       } else if (status === 'rejected' || status === 'cancelled') {
+        // Implementamos periodo de gracia: En lugar de cancelar, marcamos como 'past_due'
         await supabase
           .from('subscriptions')
-          .update({ status: 'canceled' })
+          .update({ status: 'past_due' })
           .eq('barbershop_id', barbershopId)
-          .eq('status', 'pending')
+          .in('status', ['pending', 'active'])
       }
     }
 

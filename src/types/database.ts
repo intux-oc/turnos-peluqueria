@@ -61,7 +61,7 @@ export interface Subscription {
   id: string
   barbershop_id: string
   plan_id: string
-  status: 'pending' | 'active' | 'canceled' | 'expired'
+  status: 'pending' | 'active' | 'canceled' | 'expired' | 'past_due'
   mp_preference_id?: string
   mp_payment_id?: string
   amount: number

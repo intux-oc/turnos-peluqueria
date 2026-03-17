@@ -83,7 +83,7 @@ export default function SuperAdminPage() {
         } as BarbershopRow;
       });
 
-      const active = shopsList.filter((s) => s.subscription?.status === 'active');
+      const active = shopsList.filter((s) => s.subscription?.status === 'active' || s.subscription?.status === 'past_due');
       const mrr = active.reduce((acc: number, s) => acc + (s.subscription?.amount ?? 0), 0);
 
       setBarbershops(shopsList)
@@ -101,8 +101,8 @@ export default function SuperAdminPage() {
   const statusIcon = (status: string | undefined) => {
     switch (status) {
       case 'active': return <CheckCircle2 className="w-4 h-4 text-white" />
+      case 'past_due': return <AlertCircle className="w-4 h-4 text-amber-500" />
       case 'trialing': return <Clock className="w-4 h-4 text-gray-400" />
-      case 'past_due': return <AlertCircle className="w-4 h-4 text-gray-400" />
       case 'canceled': return <XCircle className="w-4 h-4 text-gray-600" />
       default: return <Clock className="w-4 h-4 text-gray-600" />
     }
@@ -112,7 +112,7 @@ export default function SuperAdminPage() {
     switch (status) {
       case 'active': return 'Activo'
       case 'trialing': return 'Trial'
-      case 'past_due': return 'Vencido'
+      case 'past_due': return 'Periodo Gracia'
       case 'canceled': return 'Cancelado'
       default: return 'Sin plan'
     }

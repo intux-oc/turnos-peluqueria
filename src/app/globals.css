@@ -111,3 +111,11 @@
     @apply font-sans;
   }
 }
+@layer utilities {
+  @media (prefers-reduced-transparency) {
+    .backdrop-blur-md, .backdrop-blur-lg, .backdrop-blur-xl, .backdrop-blur-2xl, .backdrop-blur-3xl {
+      backdrop-filter: none !important;
+      background-color: rgba(0, 0, 0, 0.9) !important;
+    }
+  }
+}

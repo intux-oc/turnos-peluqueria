@@ -68,7 +68,8 @@ export default function SubscriptionPage() {
 
   if (loading) return null
 
-  const isActive = subscription?.status === 'active'
+  const isActive = subscription?.status === 'active' || subscription?.status === 'past_due'
+  const isPastDue = subscription?.status === 'past_due'
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans p-6 md:p-12">
@@ -83,14 +84,18 @@ export default function SubscriptionPage() {
         </div>
 
         {isActive ? (
-          <div className="mb-12 p-8 border border-green-500/30 bg-green-500/5 rounded-none flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className={`mb-12 p-8 border ${isPastDue ? 'border-amber-500/30 bg-amber-500/5' : 'border-green-500/30 bg-green-500/5'} rounded-none flex flex-col md:flex-row items-center justify-between gap-6`}>
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-500/20 flex items-center justify-center">
-                <Check className="w-6 h-6 text-green-500" />
+              <div className={`w-12 h-12 ${isPastDue ? 'bg-amber-500/20' : 'bg-green-500/20'} flex items-center justify-center`}>
+                {isPastDue ? <CreditCard className="w-6 h-6 text-amber-500" /> : <Check className="w-6 h-6 text-green-500" />}
               </div>
               <div>
-                <p className="text-sm tracking-widest uppercase font-light text-green-500">Suscripción Activa</p>
-                <p className="text-gray-400 font-light text-xs">Vence el: {subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'N/A'}</p>
+                <p className={`text-sm tracking-widest uppercase font-light ${isPastDue ? 'text-amber-500' : 'text-green-500'}`}>
+                  {isPastDue ? 'Pago Pendiente (Periodo de Gracia)' : 'Suscripción Activa'}
+                </p>
+                <p className="text-gray-400 font-light text-xs">
+                  {isPastDue ? 'Tu último pago falló. Tenés 3 días para regularizar.' : `Vence el: ${subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : 'N/A'}`}
+                </p>
               </div>
             </div>
             <div className="text-right">
