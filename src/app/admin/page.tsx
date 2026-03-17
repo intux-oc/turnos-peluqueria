@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -10,11 +10,10 @@ import { Overview } from '@/components/admin/Overview'
 import { ScheduleList } from '@/components/admin/ScheduleList'
 import { turnoService, TurnoWithRelations } from '@/lib/services/turno'
 import { statsService, Stats } from '@/lib/services/stats'
-import { Settings, BarChart3, Users, Plus } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { Settings, Plus } from 'lucide-react'
 import { QuickActionCards } from '@/components/admin/QuickActionCards'
 
-export default function AdminPage() {
+function AdminDashboard() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const barbershopId = searchParams.get('barbershop')
@@ -56,10 +55,27 @@ export default function AdminPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [barbershopId])
 
+  const getOwnBarbershopId = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const { data: shop } = await supabase
+      .from('barbershops')
+      .select('id')
+      .eq('owner_id', user.id)
+      .single()
+    return shop?.id
+  }
+
   const fetchData = async () => {
     setLoading(true)
     try {
-      // Si hay un barbershopId (desde super-admin), filtramos por él
+      const currentBarbershopId = barbershopId || (await getOwnBarbershopId())
+      
+      if (!currentBarbershopId) {
+        setLoading(false)
+        return
+      }
+
       const { data: turnosData, error } = await supabase
         .from('turnos')
         .select(`
@@ -68,7 +84,7 @@ export default function AdminPage() {
           empleado:empleados(nombre),
           cliente:profiles!turnos_cliente_id_fkey(full_name, email)
         `)
-        .eq('barbershop_id', barbershopId || (await getOwnBarbershopId()))
+        .eq('barbershop_id', currentBarbershopId)
         .gte('fecha_hora', new Date().toISOString().split('T')[0])
         .order('fecha_hora', { ascending: true })
 
@@ -82,17 +98,6 @@ export default function AdminPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  const getOwnBarbershopId = async () => {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-    const { data: shop } = await supabase
-      .from('barbershops')
-      .select('id')
-      .eq('owner_id', user.id)
-      .single()
-    return shop?.id
   }
 
   const handleConfirmar = async (id: string) => {
@@ -167,5 +172,17 @@ export default function AdminPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function AdminPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-4 border-white border-t-transparent rounded-full" />
+      </div>
+    }>
+      <AdminDashboard />
+    </Suspense>
   )
 }
