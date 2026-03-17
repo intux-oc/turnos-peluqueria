@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -15,7 +15,7 @@ const PLAN_DETAILS = {
   anual:   { label: 'Plan Anual',   price: 3999, period: 'mes · facturado anualmente' },
 }
 
-export default function PagarPage() {
+function PagarContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -99,13 +99,12 @@ export default function PagarPage() {
         .update({ role: 'admin' })
         .eq('id', user.id)
 
-      toast.success('¡Peluquería registrada exitosamente!', {
-        description: `Tu link público es: /b/${form.slug}`,
-      })
-
+      toast.success('Peluquería creada correctamente!')
       router.push(`/admin`)
+      router.refresh()
+
     } catch (error: any) {
-      toast.error('Error al procesar el pago', { description: error.message })
+      toast.error(error.message)
     } finally {
       setSubmitting(false)
     }
@@ -113,174 +112,157 @@ export default function PagarPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-pulse text-white">Verificando sesión...</div>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black pb-20">
       {/* Navigation */}
-      <nav className="sticky top-0 z-50 w-full px-6 py-5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div
-          className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors"
-          onClick={() => router.push('/planes')}
-        >
-          Peluquería
-        </div>
-        <div className="flex items-center gap-2 text-[10px] tracking-widest uppercase font-light text-gray-500">
-          <Lock className="w-3 h-3" /> Pago Seguro
-        </div>
+      <nav className="w-full px-6 py-8 flex justify-between items-center max-w-7xl mx-auto">
+        <h1 className="text-xl font-bold tracking-tighter flex items-center gap-2">
+          ✂️ STITCH
+        </h1>
+        <Button variant="ghost" onClick={() => router.push('/planes')}>
+          Volver
+        </Button>
       </nav>
 
-      <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-16 md:py-24 animate-in fade-in duration-700">
+      <main className="max-w-4xl mx-auto px-6 grid md:grid-cols-2 gap-12 mt-12">
+        {/* Form Section */}
+        <section>
+          <h2 className="text-3xl font-bold tracking-tight mb-8">Configura tu peluquería</h2>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label className="text-gray-400">Nombre de la peluquería</Label>
+              <Input 
+                placeholder="Ej: Blackbeard Barbers"
+                value={form.barbershopName}
+                onChange={(e) => setForm(f => ({ ...f, barbershopName: e.target.value }))}
+                className="bg-gray-900 border-gray-800 focus:border-white transition-all h-12"
+                required
+              />
+            </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            <div className="space-y-2">
+              <Label className="text-gray-400">Slug personalizado (stitch.pro/tu-nombre)</Label>
+              <Input 
+                placeholder="tu-peluqueria" 
+                value={form.slug}
+                onChange={(e) => handleSlugChange(e.target.value)}
+                className="bg-gray-900 border-gray-800 focus:border-white transition-all h-12"
+                required
+              />
+              <p className="text-xs text-gray-500">Este será el link que compartirás con tus clientes.</p>
+            </div>
 
-          {/* Left: Form */}
-          <div>
-            <p className="text-[10px] tracking-widest uppercase font-light text-gray-500 mb-4">Paso final</p>
-            <h1 className="text-3xl font-light tracking-wide uppercase mb-2">Activá tu peluquería</h1>
-            <p className="text-gray-500 font-light text-sm mb-10">
-              Completá los datos de tu peluquería y procesá el pago.
-            </p>
+            <div className="space-y-2">
+              <Label className="text-gray-400">Dirección</Label>
+              <Input 
+                placeholder="Calle Falsa 123" 
+                value={form.address}
+                onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))}
+                className="bg-gray-900 border-gray-800 focus:border-white transition-all h-12"
+              />
+            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">
-                  Nombre de la Peluquería
-                </Label>
-                <Input
-                  required
-                  className="bg-zinc-900/50 border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
-                  placeholder="Ej. Cortes Urbanos"
-                  value={form.barbershopName}
-                  onChange={(e) => {
-                    const val = e.target.value
-                    setForm(f => ({ ...f, barbershopName: val }))
-                    // Auto-generate slug if the user hadn't custom-typed one
-                    if (!form.slug) {
-                      handleSlugChange(val)
-                    }
-                  }}
-                />
+            <div className="space-y-2">
+              <Label className="text-gray-400">Teléfono de contacto</Label>
+              <Input 
+                placeholder="+54 9 11 ..." 
+                value={form.phone}
+                onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
+                className="bg-gray-900 border-gray-800 focus:border-white transition-all h-12"
+              />
+            </div>
+
+            <div className="pt-4 border-t border-gray-900">
+              <div className="flex items-center gap-2 mb-6">
+                <Lock className="w-4 h-4 text-gray-500" />
+                <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">Pago seguro procesado por Stitch</span>
+              </div>
+              <Button 
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-white text-black hover:bg-gray-200 h-14 font-bold text-lg rounded-full"
+              >
+                {submitting ? 'Creando...' : 'Pagar y crear peluquería'}
+              </Button>
+            </div>
+          </form>
+        </section>
+
+        {/* Order Summary */}
+        <aside>
+          <Card className="bg-gray-900 border-white/10 overflow-hidden sticky top-24">
+            <CardContent className="p-8 space-y-8">
+              <div className="flex items-center gap-4 text-white">
+                <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold">Resumen de orden</h3>
+                  <p className="text-xs text-gray-500 uppercase tracking-widest">Suscripción SaaS Profesional</p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">
-                  URL Pública (slug)
-                </Label>
-                <div className="flex items-center gap-0">
-                  <span className="h-12 px-4 flex items-center bg-zinc-900 border border-white/10 border-r-0 text-xs text-gray-600 font-light whitespace-nowrap">
-                    /b/
-                  </span>
-                  <Input
-                    required
-                    className="bg-zinc-900/50 border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
-                    placeholder="cortes-urbanos"
-                    value={form.slug}
-                    onChange={(e) => handleSlugChange(e.target.value)}
-                  />
+              <div className="space-y-4 pt-6 border-t border-white/5">
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">Plan seleccionado</span>
+                  <span className="font-medium text-white">{plan.label}</span>
                 </div>
-                <p className="text-xs text-gray-600 font-light">
-                  Tus clientes reservarán en: <span className="text-gray-400">/b/{form.slug || 'tu-peluqueria'}</span>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">Periodo</span>
+                  <span className="font-medium text-white">30 días</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-gray-400">Monto del abono</span>
+                  <span className="font-medium text-white">${plan.price.toLocaleString()} ARS</span>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/5 space-y-4">
+                <div className="flex justify-between items-end">
+                  <span className="text-lg font-bold text-white">Total hoy</span>
+                  <span className="text-2xl font-bold text-white">${plan.price.toLocaleString()} ARS</span>
+                </div>
+                <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-wider">
+                  Al confirmar, aceptas que Stitch realice el cargo mensual de ${plan.price.toLocaleString()}. Podes cancelar en cualquier momento de forma instantánea.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Dirección</Label>
-                  <Input
-                    className="bg-zinc-900/50 border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 font-light"
-                    placeholder="Av. Corrientes 1234"
-                    value={form.address}
-                    onChange={(e) => setForm(f => ({ ...f, address: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Teléfono</Label>
-                  <Input
-                    className="bg-zinc-900/50 border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 font-light"
-                    placeholder="11-1234-5678"
-                    value={form.phone}
-                    onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {/* Simulated payment section */}
-              <div className="pt-6 border-t border-white/5">
-                <div className="flex items-center gap-2 mb-4">
-                  <CreditCard className="w-4 h-4 text-gray-600" />
-                  <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">Datos de pago</span>
-                </div>
-                <div className="p-5 border border-white/10 bg-zinc-900/30 text-center">
-                  <p className="text-xs font-light text-gray-500 tracking-wide">
-                    Integración con Mercado Pago / Stripe próximamente.
-                  </p>
-                  <p className="text-xs font-light text-gray-600 mt-1">
-                    Por ahora el pago se registrará como activo de prueba.
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                disabled={submitting}
-                className="w-full bg-white text-black hover:bg-gray-200 text-xs tracking-widest uppercase font-light h-12 rounded-none transition-all shadow-lg"
-              >
-                {submitting ? 'Procesando...' : 'Activar Peluquería'}
-              </Button>
-            </form>
-          </div>
-
-          {/* Right: Order Summary */}
-          <div className="lg:sticky lg:top-24">
-            <Card className="bg-zinc-900/40 border-white/10 rounded-none">
-              <CardContent className="p-8">
-                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light mb-6">Resumen</p>
-
-                <div className="flex items-start justify-between mb-8">
-                  <div>
-                    <h3 className="text-xl font-light tracking-wide">{plan.label}</h3>
-                    <p className="text-xs text-gray-500 font-light mt-1">Facturación {planId === 'anual' ? 'anual' : 'mensual'}</p>
+              <div className="space-y-2 pt-4">
+                {[
+                  'Agenda online ilimitada',
+                  'Gestión de múltiples peluqueros',
+                  'Panel de administración profesional',
+                  'Soporte prioritario'
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-2 text-xs text-gray-400">
+                    <Check className="w-3 h-3 text-white" />
+                    <span>{item}</span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-light">${plan.price.toLocaleString('es-AR')}</p>
-                    <p className="text-xs text-gray-600 font-light">/{plan.period}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-3 pb-6 border-b border-white/5">
-                  {[
-                    'Dashboard propio',
-                    'Link público para clientes',
-                    'Gestión de turnos',
-                    'Servicios y horarios',
-                    planId === 'anual' ? 'Soporte prioritario' : 'Soporte por email',
-                  ].map((f) => (
-                    <div key={f} className="flex items-center gap-3">
-                      <Check className="w-3.5 h-3.5 text-white shrink-0" />
-                      <span className="text-xs font-light text-gray-400">{f}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-6 flex justify-between items-center">
-                  <span className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Total hoy</span>
-                  <span className="text-lg font-light">${plan.price.toLocaleString('es-AR')}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <p className="text-center text-gray-600 font-light text-xs tracking-wide mt-4">
-              Podés cancelar en cualquier momento desde tu panel.
-            </p>
-          </div>
-
-        </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
       </main>
     </div>
+  )
+}
+
+export default function PagarPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-pulse text-white">Cargando...</div>
+      </div>
+    }>
+      <PagarContent />
+    </Suspense>
   )
 }
