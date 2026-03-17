@@ -75,13 +75,16 @@ export default function SuperAdminPage() {
         .select('*', { count: 'exact', head: true })
         .eq('role', 'cliente')
 
-      const shopsList = (shops || []).map((s: any) => ({
-        ...s,
-        subscription: Array.isArray(s.subscription) ? s.subscription[0] ?? null : s.subscription,
-      })) as BarbershopRow[]
+      const shopsList = (shops || []).map((s) => {
+        const row = s as any;
+        return {
+          ...row,
+          subscription: Array.isArray(row.subscription) ? row.subscription[0] ?? null : row.subscription,
+        } as BarbershopRow;
+      });
 
-      const active = shopsList.filter(s => s.subscription?.status === 'active')
-      const mrr = active.reduce((acc, s) => acc + (s.subscription?.amount ?? 0), 0)
+      const active = shopsList.filter((s) => s.subscription?.status === 'active');
+      const mrr = active.reduce((acc: number, s) => acc + (s.subscription?.amount ?? 0), 0);
 
       setBarbershops(shopsList)
       setStats({

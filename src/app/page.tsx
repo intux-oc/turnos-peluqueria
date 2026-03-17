@@ -16,7 +16,7 @@ export default function Home() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user)
+      setUser(user as User)
       setLoading(false)
     })
   }, [supabase.auth])
