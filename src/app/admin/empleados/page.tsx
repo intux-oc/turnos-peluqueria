@@ -4,29 +4,11 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { 
-  Users, 
-  Plus, 
-  Trash2, 
-  ArrowLeft, 
-  UserPlus, 
-  Check, 
-  X,
-  User as UserIcon
-} from 'lucide-react'
+import { ArrowLeft, UserPlus, Users } from 'lucide-react'
 import { Empleado, Barbershop } from '@/types/database'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { EmployeeCard } from '@/components/admin/EmployeeCard'
+import { EmployeeModal } from '@/components/admin/EmployeeModal'
 
 export default function EmployeesPage() {
   const router = useRouter()
@@ -205,53 +187,13 @@ export default function EmployeesPage() {
         {/* List */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {employees.map((emp) => (
-            <Card key={emp.id} className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden hover:border-white/30 transition-all group">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 rounded-none border border-white/10 overflow-hidden bg-black flex items-center justify-center">
-                    {emp.foto_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={emp.foto_url} alt={emp.nombre} className="w-full h-full object-cover" />
-                    ) : (
-                      <UserIcon className="w-6 h-6 text-gray-700" strokeWidth={1} />
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-light tracking-widest uppercase text-white truncate max-w-[150px]">{emp.nombre}</h3>
-                    <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">{emp.especialidad || 'Peluquero'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => handleOpenModal(emp)}
-                      className="text-[10px] tracking-widest uppercase font-light text-gray-500 hover:text-white h-8 px-3 rounded-none"
-                    >
-                      Editar
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => toggleStatus(emp)}
-                      className={`text-[10px] tracking-widest uppercase font-light h-8 px-3 rounded-none ${emp.activo ? 'text-gray-500 hover:text-red-400' : 'text-green-500 hover:text-green-400'}`}
-                    >
-                      {emp.activo ? 'Desactivar' : 'Activar'}
-                    </Button>
-                  </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => deleteEmployee(emp.id)}
-                    className="text-gray-700 hover:text-red-500 h-8 w-8 p-0 rounded-none opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <EmployeeCard 
+              key={emp.id}
+              employee={emp}
+              onEdit={handleOpenModal}
+              onToggleActive={toggleStatus}
+              onDelete={deleteEmployee}
+            />
           ))}
 
           {employees.length === 0 && !loading && (
@@ -263,66 +205,18 @@ export default function EmployeesPage() {
         </div>
 
         {/* Modal */}
-        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-          <DialogContent className="bg-zinc-950 border-white/10 rounded-none text-white max-w-lg p-0 overflow-hidden">
-            <DialogHeader className="p-8 border-b border-white/5">
-              <DialogTitle className="text-xl font-light tracking-widest uppercase">
-                {editingEmployee ? 'Editar Empleado' : 'Nuevo Empleado'}
-              </DialogTitle>
-              <DialogDescription className="text-gray-500 font-light text-xs tracking-widest">
-                Ingresá los detalles del profesional.
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="p-8 space-y-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] tracking-widest uppercase text-gray-400 font-light">Nombre Completo</Label>
-                <Input 
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Ej: Juan Pérez"
-                  className="bg-black border-white/10 focus:border-white rounded-none h-12 font-light"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] tracking-widest uppercase text-gray-400 font-light">Especialidad</Label>
-                <Input 
-                  value={especialidad}
-                  onChange={(e) => setEspecialidad(e.target.value)}
-                  placeholder="Ej: Colorista / Barbero"
-                  className="bg-black border-white/10 focus:border-white rounded-none h-12 font-light"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-[10px] tracking-widest uppercase text-gray-400 font-light">URL de la Foto (Opcional)</Label>
-                <Input 
-                  value={fotoUrl}
-                  onChange={(e) => setFotoUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="bg-black border-white/10 focus:border-white rounded-none h-12 font-light"
-                />
-              </div>
-            </div>
-
-            <DialogFooter className="p-8 bg-zinc-900/50 flex sm:justify-between items-center gap-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => setIsModalOpen(false)}
-                className="text-xs tracking-widest uppercase font-light text-gray-500 hover:text-white rounded-none"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleSubmit}
-                className="h-12 px-8 text-xs tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-all rounded-none"
-              >
-                {editingEmployee ? 'Guardar Cambios' : 'Crear Empleado'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <EmployeeModal 
+          open={isModalOpen}
+          onOpenChange={setIsModalOpen}
+          editing={editingEmployee}
+          nombre={nombre}
+          especialidad={especialidad}
+          fotoUrl={fotoUrl}
+          onNombreChange={setNombre}
+          onEspecialidadChange={setEspecialidad}
+          onFotoUrlChange={setFotoUrl}
+          onSubmit={handleSubmit}
+        />
       </main>
     </div>
   )

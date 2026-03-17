@@ -11,13 +11,18 @@ import { ScheduleList } from '@/components/admin/ScheduleList'
 import { turnoService, TurnoWithRelations } from '@/lib/services/turno'
 import { statsService, Stats } from '@/lib/services/stats'
 import { Settings, BarChart3, Users, Plus } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
+import { QuickActionCards } from '@/components/admin/QuickActionCards'
 
 export default function AdminPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const barbershopId = searchParams.get('barbershop')
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [turnos, setTurnos] = useState<TurnoWithRelations[]>([])
   const [stats, setStats] = useState<Stats | null>(null)
+  const [barbershopName, setBarbershopName] = useState('Panel Administrativo')
   
   // Verificación de acceso
   useEffect(() => {
@@ -31,29 +36,63 @@ export default function AdminPage() {
         .eq('id', user.id)
         .single()
         
-      if (profile?.role !== 'admin') {
+      if (profile?.role !== 'admin' && profile?.role !== 'superadmin') {
         router.push('/')
         return
+      }
+
+      if (barbershopId) {
+        const { data: shop } = await supabase
+          .from('barbershops')
+          .select('name')
+          .eq('id', barbershopId)
+          .single()
+        if (shop) setBarbershopName(shop.name)
       }
       
       fetchData()
     }
     checkAuth()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [barbershopId])
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const data = await turnoService.getTurnosHoy()
-      setTurnos(data)
-      const calculatedStats = statsService.calcularStats(data)
+      // Si hay un barbershopId (desde super-admin), filtramos por él
+      const { data: turnosData, error } = await supabase
+        .from('turnos')
+        .select(`
+          id, fecha_hora, estado, notas, cliente_id, servicio_id, empleado_id,
+          servicio:servicios(nombre, precio, duracion_minutos),
+          empleado:empleados(nombre),
+          cliente:profiles!turnos_cliente_id_fkey(full_name, email)
+        `)
+        .eq('barbershop_id', barbershopId || (await getOwnBarbershopId()))
+        .gte('fecha_hora', new Date().toISOString().split('T')[0])
+        .order('fecha_hora', { ascending: true })
+
+      if (error) throw error
+
+      setTurnos(turnosData as any)
+      const calculatedStats = statsService.calcularStats(turnosData as any)
       setStats(calculatedStats)
     } catch (error: any) {
       toast.error('Error al cargar datos')
     } finally {
       setLoading(false)
     }
+  }
+
+  const getOwnBarbershopId = async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+    const { data: shop } = await supabase
+      .from('barbershops')
+      .select('id')
+      .eq('owner_id', user.id)
+      .single()
+    return shop?.id
   }
 
   const handleConfirmar = async (id: string) => {
@@ -100,7 +139,7 @@ export default function AdminPage() {
       
       <main className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">Panel Administrativo</h1>
+          <h1 className="text-3xl font-light tracking-widest uppercase">{barbershopName}</h1>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={() => router.push('/admin/servicios')}>
               <Plus className="h-4 w-4 mr-2" />
@@ -124,27 +163,7 @@ export default function AdminPage() {
             />
           </div>
 
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold">Accesos Rápidos</h3>
-            <div className="grid gap-3">
-              <Button 
-                variant="secondary" 
-                className="w-full justify-start h-14 bg-gray-900 border-gray-800 hover:bg-gray-800"
-                onClick={() => router.push('/admin/reportes')}
-              >
-                <BarChart3 className="h-5 w-5 mr-3 text-blue-400" />
-                Reportes de Negocio
-              </Button>
-              <Button 
-                variant="secondary" 
-                className="w-full justify-start h-14 bg-gray-900 border-gray-800 hover:bg-gray-800"
-                onClick={() => router.push('/admin/empleados')}
-              >
-                <Users className="h-5 w-5 mr-3 text-green-400" />
-                Gestión de Personal
-              </Button>
-            </div>
-          </div>
+          <QuickActionCards />
         </div>
       </main>
     </div>
