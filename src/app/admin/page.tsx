@@ -119,6 +119,7 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         {/* Header Section */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
