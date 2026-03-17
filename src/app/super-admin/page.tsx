@@ -128,10 +128,10 @@ export default function SuperAdminPage() {
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full px-6 py-5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
         <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Platform Admin
+          Admin de Plataforma
         </div>
         <div className="text-[10px] tracking-widest uppercase font-light text-gray-500">
-          Super-Admin Console
+          Consola de Super-Admin
         </div>
       </nav>
 
@@ -139,7 +139,7 @@ export default function SuperAdminPage() {
 
         {/* Header */}
         <div className="mb-12">
-          <h1 className="text-4xl font-light tracking-wide uppercase mb-2">Platform Overview</h1>
+          <h1 className="text-4xl font-light tracking-wide uppercase mb-2">Resumen de la Plataforma</h1>
           <p className="text-gray-500 font-light text-sm tracking-wide">
             Vista global de peluquerías, clientes y suscripciones.
           </p>

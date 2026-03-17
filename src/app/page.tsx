@@ -80,9 +80,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-end mb-20 gap-8">
             <div className="max-w-2xl">
-              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-6">SERVICES</h2>
+              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-6 uppercase">Servicios</h2>
               <p className="text-gray-400 text-lg md:text-xl font-light leading-relaxed">
-                Curated treatments tailored to your unique features and lifestyle. We use only premium products for exceptional results.
+                Tratamientos seleccionados a medida de tu estilo y personalidad. Utilizamos exclusivamente productos de alta gama para asegurar resultados excepcionales.
               </p>
             </div>
           </div>
@@ -93,12 +93,12 @@ export default function Home() {
               <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
                 <Scissors className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
               </div>
-              <h3 className="text-2xl font-light mb-4 tracking-wide">Signature Cut</h3>
+              <h3 className="text-2xl font-light mb-4 tracking-wide uppercase">Corte Signature</h3>
               <p className="text-gray-400 font-light leading-relaxed mb-8">
-                Personalized consultation, precision cut, and styling tailored to your face shape and hair texture.
+                Asesoramiento personalizado, corte de precisión y peinado adaptado a la forma de tu rostro y textura del cabello.
               </p>
               <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
-                Explore
+                Explorar
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
@@ -108,12 +108,12 @@ export default function Home() {
               <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
                 <Sparkles className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
               </div>
-              <h3 className="text-2xl font-light mb-4 tracking-wide">Color & Tone</h3>
+              <h3 className="text-2xl font-light mb-4 tracking-wide uppercase">Color y Tono</h3>
               <p className="text-gray-400 font-light leading-relaxed mb-8">
-                Bespoke color services ranging from subtle highlights to complete transformations using premium dyes.
+                Servicios de color a medida, desde reflejos sutiles hasta transformaciones completas utilizando tinturas de primer nivel.
               </p>
               <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
-                Explore
+                Explorar
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
@@ -123,12 +123,12 @@ export default function Home() {
               <div className="mb-8 p-4 bg-white/5 inline-block rounded-none border border-white/10">
                 <Star className="w-8 h-8 font-extralight text-white group-hover:rotate-12 transition-transform duration-500" strokeWidth={1} />
               </div>
-              <h3 className="text-2xl font-light mb-4 tracking-wide">Styling & Finish</h3>
+              <h3 className="text-2xl font-light mb-4 tracking-wide uppercase">Estilo y Acabado</h3>
               <p className="text-gray-400 font-light leading-relaxed mb-8">
-                Professional blowouts and styling for special events or when you simply want to look your absolute best.
+                Modelado profesional y peinados para eventos especiales o simplemente para brillar en tu mejor versión.
               </p>
               <div className="text-sm tracking-widest uppercase text-gray-500 flex items-center gap-2 group-hover:text-white transition-colors duration-500">
-                Explore
+                Explorar
                 <ChevronRight className="w-4 h-4" />
               </div>
             </div>
@@ -141,8 +141,8 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-20 items-center">
             <div>
-              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-10 leading-tight">
-                THE PELUQUERÍA<br />EXPERIENCE
+              <h2 className="text-4xl md:text-5xl font-light tracking-tighter mb-10 leading-tight uppercase">
+                LA EXPERIENCIA<br />PELUQUERÍA
               </h2>
               
               <div className="space-y-8">
@@ -151,8 +151,8 @@ export default function Home() {
                     <CheckCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-light mb-2">Expert Stylists</h4>
-                    <p className="text-gray-400 font-light leading-relaxed">Our team consists of highly trained professionals dedicated to their craft.</p>
+                    <h4 className="text-xl font-light mb-2 uppercase">Estilistas Expertos</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">Nuestro equipo está formado por profesionales altamente capacitados y apasionados por su arte.</p>
                   </div>
                 </div>
                 
@@ -161,8 +161,8 @@ export default function Home() {
                     <CheckCircle className="w-6 h-6 text-white" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-light mb-2">Premium Products</h4>
-                    <p className="text-gray-400 font-light leading-relaxed">We exclusively use top-tier, salon-grade products for all our treatments.</p>
+                    <h4 className="text-xl font-light mb-2 uppercase">Productos Premium</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">Utilizamos exclusivamente productos de grado profesional para todos nuestros tratamientos.</p>
                   </div>
                 </div>
                 
@@ -171,8 +171,8 @@ export default function Home() {
                     <Clock className="w-6 h-6 text-white" strokeWidth={1.5} />
                   </div>
                   <div>
-                    <h4 className="text-xl font-light mb-2">Seamless Booking</h4>
-                    <p className="text-gray-400 font-light leading-relaxed">Manage your appointments effortlessly through our streamlined digital platform.</p>
+                    <h4 className="text-xl font-light mb-2 uppercase">Reservas Ágiles</h4>
+                    <p className="text-gray-400 font-light leading-relaxed">Gestioná tus turnos sin esfuerzo a través de nuestra plataforma digital optimizada.</p>
                   </div>
                 </div>
               </div>
@@ -194,7 +194,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-12 border-t border-white/10 bg-black text-center">
         <p className="text-gray-500 font-light text-sm tracking-widest uppercase">
-          &copy; {new Date().getFullYear()} Peluquería. All rights reserved.
+          &copy; {new Date().getFullYear()} Peluquería. Todos los derechos reservados.
         </p>
       </footer>
     </div>
