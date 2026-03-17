@@ -86,26 +86,6 @@ export default function PerfilPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Peluquería
-        </div>
-        <div className="flex items-center gap-6">
-          <span className="text-sm font-light text-gray-400">Welcome, {fullName || 'User'}</span>
-          <Button 
-            variant="ghost" 
-            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5 data-[state=open]:bg-white/5"
-            onClick={async () => {
-               await supabase.auth.signOut()
-               router.push('/')
-            }}
-          >
-            <LogOut className="w-4 h-4 mr-2" /> Sign Out
-          </Button>
-        </div>
-      </nav>
-
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
@@ -116,9 +96,9 @@ export default function PerfilPage() {
               <UserIcon className="w-10 h-10 text-gray-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-light tracking-wide mb-2">My Profile</h1>
+              <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Mi Perfil</h1>
               <p className="text-gray-500 font-light text-sm tracking-wide">
-                Manage your personal information and preferences
+                Gestioná tu información personal y preferencias
               </p>
             </div>
           </div>
@@ -128,7 +108,17 @@ export default function PerfilPage() {
               className="h-12 border-white/20 hover:bg-white/5 hover:text-white rounded-none font-light text-gray-300 text-xs tracking-widest uppercase flex items-center gap-2"
               onClick={() => router.push('/mis-turnos')}
             >
-              <History className="w-4 h-4" /> Appointments
+              <History className="w-4 h-4" /> Mis Turnos
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="h-12 border-red-500/20 hover:bg-red-500/5 text-red-500 rounded-none font-light text-xs tracking-widest uppercase flex items-center gap-2"
+              onClick={async () => {
+                 await supabase.auth.signOut()
+                 router.push('/')
+              }}
+            >
+              <LogOut className="w-4 h-4" /> Cerrar Sesión
             </Button>
           </div>
         </div>
@@ -140,19 +130,19 @@ export default function PerfilPage() {
             <Card className="bg-zinc-900/50 border-white/10 rounded-none">
               <CardContent className="p-6">
                 <h3 className="text-xs tracking-widest uppercase text-gray-400 font-light border-b border-white/10 pb-4 mb-4 flex items-center gap-2">
-                  <CalendarDays className="w-4 h-4" /> Activity Summary
+                  <CalendarDays className="w-4 h-4" /> Resumen de Actividad
                 </h3>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-light text-gray-500">Total Visits</span>
+                    <span className="text-sm font-light text-gray-500">Visitas Totales</span>
                     <span className="text-lg font-light">-</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-light text-gray-500">Upcoming</span>
+                    <span className="text-sm font-light text-gray-500">Próximos</span>
                     <span className="text-lg font-light">-</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-light text-gray-500">Member Since</span>
+                    <span className="text-sm font-light text-gray-500">Miembro desde</span>
                     <span className="text-lg font-light">
                        {user?.created_at ? new Date(user.created_at).toLocaleDateString() : '-'}
                     </span>
@@ -164,17 +154,17 @@ export default function PerfilPage() {
             <Card className="bg-zinc-900/50 border-white/10 rounded-none">
               <CardContent className="p-6">
                  <h3 className="text-xs tracking-widest uppercase text-gray-400 font-light border-b border-white/10 pb-4 mb-4 flex items-center gap-2">
-                  <Settings className="w-4 h-4" /> Preferences
+                  <Settings className="w-4 h-4" /> Preferencias
                  </h3>
                  <div className="space-y-4">
                    <div className="flex items-center justify-between">
-                     <span className="text-sm font-light text-gray-400">Email Notifications</span>
+                     <span className="text-sm font-light text-gray-400">Notificaciones Email</span>
                      <div className="w-10 h-5 bg-white rounded-full relative cursor-pointer">
                        <div className="w-4 h-4 bg-black rounded-full absolute right-0.5 top-0.5" />
                      </div>
                    </div>
                    <div className="flex items-center justify-between">
-                     <span className="text-sm font-light text-gray-400">SMS Reminders</span>
+                     <span className="text-sm font-light text-gray-400">Recordatorios SMS</span>
                      <div className="w-10 h-5 bg-zinc-700 rounded-full relative cursor-pointer border border-white/20">
                        <div className="w-4 h-4 bg-gray-400 rounded-full absolute left-0.5 top-0.5" />
                      </div>
@@ -193,11 +183,11 @@ export default function PerfilPage() {
                   {/* Personal Info Section */}
                   <div>
                     <h3 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-6">
-                      Personal Information
+                      Información Personal
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-3">
-                        <Label htmlFor="fullName" className="text-xs tracking-widest uppercase text-gray-400 font-light">Full Name</Label>
+                        <Label htmlFor="fullName" className="text-xs tracking-widest uppercase text-gray-400 font-light">Nombre Completo</Label>
                         <div className="relative">
                           <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                           <Input
@@ -211,7 +201,7 @@ export default function PerfilPage() {
                         </div>
                       </div>
                       <div className="space-y-3">
-                        <Label htmlFor="phone" className="text-xs tracking-widest uppercase text-gray-400 font-light">Phone Number</Label>
+                        <Label htmlFor="phone" className="text-xs tracking-widest uppercase text-gray-400 font-light">Número de Teléfono</Label>
                         <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                           <Input
@@ -230,11 +220,11 @@ export default function PerfilPage() {
                   {/* Account Security Section */}
                   <div>
                     <h3 className="text-sm tracking-widest uppercase text-white font-light border-b border-white/10 pb-4 mb-6">
-                      Account Security
+                      Seguridad de la Cuenta
                     </h3>
                     <div className="space-y-6">
                       <div className="space-y-3">
-                        <Label htmlFor="email" className="text-xs tracking-widest uppercase text-gray-400 font-light">Email Address</Label>
+                        <Label htmlFor="email" className="text-xs tracking-widest uppercase text-gray-400 font-light">Dirección de Email</Label>
                         <div className="relative">
                           <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                           <Input
@@ -245,7 +235,7 @@ export default function PerfilPage() {
                             className="pl-12 bg-zinc-900/30 border-white/10 text-gray-500 h-14 rounded-none font-light cursor-not-allowed"
                           />
                         </div>
-                        <p className="text-xs text-gray-500 font-light">Email address cannot be changed currently.</p>
+                        <p className="text-xs text-gray-500 font-light">El email no puede ser cambiado actualmente.</p>
                       </div>
                     </div>
                   </div>
@@ -258,7 +248,7 @@ export default function PerfilPage() {
                       className="h-14 px-8 text-sm tracking-widest uppercase font-light text-gray-400 hover:text-white hover:bg-white/5 rounded-none transition-colors"
                       onClick={() => router.push('/')}
                     >
-                      Cancel
+                      Cancelar
                     </Button>
                     <Button 
                       type="submit" 
@@ -268,12 +258,12 @@ export default function PerfilPage() {
                       {saving ? (
                         <>
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
-                          <span>Saving...</span>
+                          <span>Guardando...</span>
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4" />
-                          <span>Save Changes</span>
+                          <span>Guardar Cambios</span>
                         </>
                       )}
                     </Button>

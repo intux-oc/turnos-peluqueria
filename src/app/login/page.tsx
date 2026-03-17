@@ -63,24 +63,17 @@ export default function LoginPage() {
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       <Toaster theme="dark" />
       
-      {/* Navigation (simplified for login) */}
-      <nav className="absolute top-0 w-full z-50 px-6 py-8">
-        <div className="text-2xl font-light tracking-widest uppercase text-center cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Peluquería
-        </div>
-      </nav>
-
       {/* Main Content */}
       <div className="flex-1 flex flex-col md:flex-row">
         {/* Left Side - Image Placeholder */}
         <div className="hidden md:flex w-1/2 bg-zinc-900 border-r border-white/10 relative overflow-hidden">
            <div className="absolute inset-0 bg-linear-to-tr from-black/90 via-black/40 to-transparent z-10" />
            <div className="absolute bottom-20 left-20 z-20 max-w-md">
-             <h2 className="text-5xl font-light tracking-tighter mb-6 leading-tight">
-               YOUR STYLE,<br />PERFECTED.
+             <h2 className="text-5xl font-light tracking-tighter mb-6 leading-tight uppercase">
+               TU ESTILO,<br />PERFECCIONADO.
              </h2>
              <p className="text-gray-400 font-light leading-relaxed">
-               Join our exclusive community to book appointments, manage your profile, and experience premium grooming.
+               Unite a nuestra comunidad exclusiva para agendar turnos, gestionar tu perfil y vivir una experiencia premium.
              </p>
            </div>
         </div>
@@ -94,17 +87,17 @@ export default function LoginPage() {
             
             <div className="mb-12 text-center md:text-left">
               <h1 className="text-3xl font-light tracking-wide mb-3">
-                {isSignUp ? 'Create Account' : 'Welcome Back'}
+                {isSignUp ? 'Crear Cuenta' : 'Bienvenido de Nuevo'}
               </h1>
               <p className="text-gray-500 font-light text-sm tracking-wide">
-                {isSignUp ? 'Enter your details to get started' : 'Enter your credentials to continue'}
+                {isSignUp ? 'Ingresá tus datos para comenzar' : 'Ingresá tus credenciales para continuar'}
               </p>
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className={`space-y-6 transition-all duration-500 ${isSignUp ? 'opacity-100 max-h-40' : 'opacity-0 max-h-0 overflow-hidden m-0'}`}>
                 <div className="space-y-3">
-                  <Label htmlFor="fullName" className="text-xs tracking-widest uppercase text-gray-400 font-light">Full Name</Label>
+                  <Label htmlFor="fullName" className="text-xs tracking-widest uppercase text-gray-400 font-light">Nombre Completo</Label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                     <Input
@@ -113,7 +106,7 @@ export default function LoginPage() {
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       required={isSignUp}
-                      placeholder="John Doe"
+                      placeholder="Juan Pérez"
                       className="pl-12 bg-transparent border-white/20 focus:border-white text-white h-14 rounded-none font-light placeholder:text-gray-600 transition-colors"
                     />
                   </div>
@@ -121,7 +114,7 @@ export default function LoginPage() {
               </div>
               
               <div className="space-y-3">
-                <Label htmlFor="email" className="text-xs tracking-widest uppercase text-gray-400 font-light">Email Address</Label>
+                <Label htmlFor="email" className="text-xs tracking-widest uppercase text-gray-400 font-light">Dirección de Email</Label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                   <Input
@@ -130,7 +123,7 @@ export default function LoginPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    placeholder="you@example.com"
+                    placeholder="ejemplo@email.com"
                     className="pl-12 bg-transparent border-white/20 focus:border-white text-white h-14 rounded-none font-light placeholder:text-gray-600 transition-colors"
                   />
                 </div>
@@ -138,10 +131,10 @@ export default function LoginPage() {
 
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-xs tracking-widest uppercase text-gray-400 font-light">Password</Label>
+                  <Label htmlFor="password" className="text-xs tracking-widest uppercase text-gray-400 font-light">Contraseña</Label>
                   {!isSignUp && (
                     <span className="text-xs font-light text-gray-500 hover:text-white cursor-pointer transition-colors">
-                      Forgot password?
+                      ¿Olvidaste tu contraseña?
                     </span>
                   )}
                 </div>
@@ -167,11 +160,11 @@ export default function LoginPage() {
                 {loading ? (
                   <div className="flex items-center gap-3 text-black">
                     <div className="h-4 w-4 animate-spin rounded-full border-2 border-black/30 border-t-black" />
-                    <span>Processing...</span>
+                    <span>Procesando...</span>
                   </div>
                 ) : (
                   <>
-                    <span>{isSignUp ? 'Create Account' : 'Sign In'}</span>
+                    <span>{isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}</span>
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </>
                 )}
@@ -182,7 +175,7 @@ export default function LoginPage() {
             <div className="mt-8">
                <div className="relative flex items-center py-5">
                   <div className="w-full border-t border-white/10"></div>
-                  <span className="bg-black px-4 text-xs tracking-widest uppercase text-gray-600 font-light">Or continue with</span>
+                  <span className="bg-black px-4 text-xs tracking-widest uppercase text-gray-600 font-light">O continuar con</span>
                   <div className="w-full border-t border-white/10"></div>
                </div>
                
@@ -197,13 +190,13 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-12 text-center text-sm text-gray-500 font-light">
-              {isSignUp ? 'Already have an account?' : 'New to Peluquería?'}
+              {isSignUp ? '¿Ya tenés una cuenta?' : '¿Nuevo en Peluquería?'}
               <button
                 type="button"
                 className="ml-2 font-medium text-white hover:text-gray-300 transition-colors uppercase tracking-widest text-xs"
                 onClick={() => setIsSignUp(!isSignUp)}
               >
-                {isSignUp ? 'Sign In' : 'Create Account'}
+                {isSignUp ? 'Iniciar Sesión' : 'Crear Cuenta'}
               </button>
             </div>
           </div>

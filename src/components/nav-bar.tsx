@@ -12,19 +12,42 @@ export function NavBar() {
   const router = useRouter();
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
-    });
+      
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(profile?.role === 'admin' || profile?.role === 'superadmin');
+      }
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', session.user.id)
+          .single();
+        setIsAdmin(profile?.role === 'admin' || profile?.role === 'superadmin');
+      } else {
+        setIsAdmin(false);
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -33,54 +56,69 @@ export function NavBar() {
     router.refresh();
   };
 
-  const navLinks = user ? [
-    { href: "/mis-turnos", label: "Mis Turnos", icon: Calendar },
-    { href: "/perfil", label: "Perfil", icon: UserIcon },
-    // Simple check for admin, in real app check db role
-    { href: "/admin", label: "Admin", icon: Settings, adminOnly: true },
-  ] : [];
+  const navLinks = [
+    ...(user ? [
+      { href: "/mis-turnos", label: "Mis Turnos", icon: Calendar },
+      { href: "/perfil", label: "Perfil", icon: UserIcon },
+    ] : []),
+    ...(isAdmin ? [
+      { href: "/admin", label: "Administración", icon: Settings },
+    ] : []),
+  ];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-black/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+    <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2" onClick={() => setMobileMenuOpen(false)}>
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-black">
-            <Scissors className="h-5 w-5" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white uppercase">
-            Peluquería
-          </span>
+        <Link 
+          href="/" 
+          className="text-2xl font-light tracking-widest uppercase hover:opacity-80 transition-opacity" 
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          Peluquería
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-6">
+        <div className="hidden md:flex items-center gap-8">
           {navLinks.map((link) => (
             <Link 
               key={link.href} 
               href={link.href} 
-              className="text-sm font-medium text-gray-400 transition-colors hover:text-white"
+              className="text-sm font-light text-gray-400 transition-colors hover:text-white uppercase tracking-widest"
             >
               {link.label}
             </Link>
           ))}
+          
+          <div className="h-6 w-px bg-white/10 mx-2" />
+
           {user ? (
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={handleSignOut}>
+            <Button 
+              variant="ghost" 
+              className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-xs font-light"
+              onClick={handleSignOut}
+            >
+              <LogOut className="w-4 h-4 mr-2" />
               Salir
             </Button>
           ) : (
-            <Button variant="ghost" size="sm" className="text-gray-400 hover:text-white" onClick={() => router.push("/login")}>
+            <Button 
+              variant="ghost" 
+              className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-xs font-light"
+              onClick={() => router.push("/login")}
+            >
+              <LogIn className="w-4 h-4 mr-2" />
               Ingresar
             </Button>
           )}
+          
           <Button 
-            size="sm" 
-            className="bg-white text-black hover:bg-gray-200"
+            className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest text-xs font-light px-8 h-10 rounded-none"
             onClick={() => router.push(user ? "/turnos/nuevo" : "/login")}
           >
-            Reservar Turno
+            Agendar Turno
           </Button>
-        </nav>
+        </div>
 
         {/* Mobile Menu Toggle */}
         <button 
@@ -93,36 +131,51 @@ export function NavBar() {
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden absolute top-16 left-0 w-full bg-black border-b border-white/10 p-4 space-y-4 animate-in slide-in-from-top duration-200">
+        <div className="md:hidden absolute top-20 left-0 w-full bg-black/95 backdrop-blur-xl border-b border-white/10 p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
               onClick={() => setMobileMenuOpen(false)}
-              className="flex items-center gap-3 text-lg font-medium text-gray-300 py-2"
+              className="flex items-center gap-4 text-lg font-light text-gray-300 py-2 uppercase tracking-[0.2em]"
             >
-              <link.icon className="h-5 w-5" />
+              <link.icon className="h-5 w-5 text-gray-500" strokeWidth={1} />
               {link.label}
             </Link>
           ))}
-          <div className="pt-4 flex flex-col gap-3">
-            {!user && (
-              <Button variant="outline" className="border-white/10 text-white" onClick={() => { router.push("/login"); setMobileMenuOpen(false); }}>
+          
+          <div className="h-px w-full bg-white/10 my-2" />
+          
+          <div className="flex flex-col gap-4">
+            {!user ? (
+              <Button 
+                variant="outline" 
+                className="border-white/10 text-white rounded-none uppercase tracking-widest font-light h-12" 
+                onClick={() => { router.push("/login"); setMobileMenuOpen(false); }}
+              >
                 Ingresar
               </Button>
-            )}
-            <Button className="bg-white text-black" onClick={() => { router.push(user ? "/turnos/nuevo" : "/login"); setMobileMenuOpen(false); }}>
-              Reservar Turno
-            </Button>
-            {user && (
-              <Button variant="ghost" className="text-red-500 justify-start px-0" onClick={handleSignOut}>
+            ) : (
+              <Button 
+                variant="ghost" 
+                className="text-red-500 justify-start px-0 rounded-none uppercase tracking-widest font-light h-12" 
+                onClick={handleSignOut}
+              >
                 <LogOut className="h-5 w-5 mr-3" />
                 Cerrar Sesión
               </Button>
             )}
+            <Button 
+              className="bg-white text-black rounded-none uppercase tracking-widest font-light h-12" 
+              onClick={() => { router.push(user ? "/turnos/nuevo" : "/login"); setMobileMenuOpen(false); }}
+            >
+              Agendar Turno
+            </Button>
           </div>
         </div>
       )}
-    </header>
+    </nav>
   );
 }
+
+import { LogIn } from "lucide-react";

@@ -143,7 +143,7 @@ export default function MisTurnosPage() {
                   <Clock className="w-3.5 h-3.5" /> {fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} ({turno.servicio?.duracion_minutos} min)
                 </div>
                 <div className="flex items-center gap-2">
-                  <UserIcon className="w-3.5 h-3.5" /> {turno.servicio?.precio ? `$${turno.servicio?.precio}` : 'Price TBD'}
+                  <UserIcon className="w-3.5 h-3.5" /> {turno.servicio?.precio ? `$${turno.servicio?.precio}` : 'Precio a definir'}
                 </div>
               </div>
               {turno.notas && (
@@ -160,7 +160,7 @@ export default function MisTurnosPage() {
                 className="flex-1 md:flex-none h-10 border-white/20 hover:bg-red-900/20 hover:text-red-400 hover:border-red-900/50 rounded-none font-light text-xs tracking-widest uppercase transition-colors"
                 onClick={() => handleCancelar(turno.id)}
                >
-                 Cancel
+                 Cancelar
                </Button>
             ) : (
                 <Button variant="ghost" className="w-10 h-10 p-0 text-gray-500 hover:text-white hover:bg-white/5 rounded-none">
@@ -183,22 +183,6 @@ export default function MisTurnosPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Peluquería
-        </div>
-        <div className="flex items-center gap-6">
-          <Button 
-            variant="ghost" 
-            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-            onClick={() => router.push('/perfil')}
-          >
-            <UserIcon className="w-4 h-4 mr-2" /> Profile
-          </Button>
-        </div>
-      </nav>
-
       <main className="flex-1 max-w-5xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Header Section */}
@@ -209,19 +193,19 @@ export default function MisTurnosPage() {
               className="mb-6 h-8 px-0 text-gray-500 hover:text-white hover:bg-transparent tracking-widest uppercase text-xs font-light"
               onClick={() => router.push('/')}
             >
-              <ArrowLeft className="w-3 h-3 mr-2" /> Back to Home
+              <ArrowLeft className="w-3 h-3 mr-2" /> Volver al Inicio
             </Button>
-            <h1 className="text-4xl font-light tracking-wide mb-2">My Appointments</h1>
+            <h1 className="text-4xl font-light tracking-wide mb-2">Mis Turnos</h1>
             <p className="text-gray-500 font-light text-sm tracking-wide">
-              Manage your upcoming visits and view history
+              Gestioná tus próximas visitas y revisá tu historial
             </p>
           </div>
-          <Button 
-            className="h-12 px-8 text-xs tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-colors rounded-none flex items-center gap-2"
-            onClick={() => router.push('/turnos/nuevo')}
-          >
-            <Calendar className="w-4 h-4" /> Book New
-          </Button>
+            <Button 
+              className="h-12 px-8 text-xs tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 transition-colors rounded-none flex items-center gap-2"
+              onClick={() => router.push('/turnos/nuevo')}
+            >
+              <Calendar className="w-4 h-4" /> Nuevo Turno
+            </Button>
         </div>
 
         {/* Custom Tabs */}
@@ -232,7 +216,7 @@ export default function MisTurnosPage() {
               activeTab === 'proximos' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            Upcoming ({turnosProximos.length})
+            Próximos ({turnosProximos.length})
             {activeTab === 'proximos' && (
               <span className="absolute bottom-0 left-0 w-full h-px bg-white" />
             )}
@@ -243,7 +227,7 @@ export default function MisTurnosPage() {
               activeTab === 'pasados' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
             }`}
           >
-            History ({turnosPasados.length})
+            Historial ({turnosPasados.length})
             {activeTab === 'pasados' && (
               <span className="absolute bottom-0 left-0 w-full h-px bg-white" />
             )}
@@ -255,7 +239,7 @@ export default function MisTurnosPage() {
           {loading ? (
              <div className="flex flex-col items-center justify-center py-20 text-gray-500 font-light space-y-4">
                <div className="w-8 h-8 rounded-full border border-gray-600 border-t-white animate-spin" />
-               <p className="text-xs uppercase tracking-widest">Loading appointments...</p>
+               <p className="text-xs uppercase tracking-widest">Cargando turnos...</p>
              </div>
           ) : (
              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -265,16 +249,16 @@ export default function MisTurnosPage() {
                  ) : (
                    <div className="border border-white/10 border-dashed p-12 text-center bg-zinc-900/30">
                      <CalendarX2 className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                     <h3 className="text-lg font-light tracking-wide text-white mb-2">No Upcoming Appointments</h3>
+                     <h3 className="text-lg font-light tracking-wide text-white mb-2">No tenés turnos próximos</h3>
                      <p className="text-gray-500 font-light text-sm mb-6 max-w-md mx-auto">
-                       You don't have any future bookings. Ready for a fresh look?
+                       No tenés reservas futuras. ¿Listo para renovar tu estilo?
                      </p>
                      <Button 
                        variant="outline"
                        className="h-10 border-white/20 hover:bg-white hover:text-black rounded-none font-light text-xs tracking-widest uppercase transition-colors"
                        onClick={() => router.push('/turnos/nuevo')}
                      >
-                       Book Now
+                       Agendar Ahora
                      </Button>
                    </div>
                  )
@@ -285,9 +269,9 @@ export default function MisTurnosPage() {
                  ) : (
                    <div className="border border-white/10 border-dashed p-12 text-center bg-zinc-900/30">
                      <Clock className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                     <h3 className="text-lg font-light tracking-wide text-white mb-2">No History</h3>
+                     <h3 className="text-lg font-light tracking-wide text-white mb-2">Sin Historial</h3>
                      <p className="text-gray-500 font-light text-sm mb-6 max-w-md mx-auto">
-                       Your past appointments will appear here.
+                       Tus turnos pasados aparecerán acá.
                      </p>
                    </div>
                  )

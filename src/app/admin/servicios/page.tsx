@@ -144,37 +144,14 @@ export default function AdminServiciosPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black transition-colors duration-500">
-      {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Peluquería
-        </div>
-        <div className="flex items-center gap-6">
-          <Button 
-            variant="ghost" 
-            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-            onClick={() => router.push('/admin')}
-          >
-            <LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-            onClick={() => router.push('/perfil')}
-          >
-            <Users className="w-4 h-4 mr-2" /> Profile
-          </Button>
-        </div>
-      </nav>
-
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
         
         {/* Header Section */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Services Management</h1>
+            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Gestión de Servicios</h1>
             <p className="text-gray-500 font-light text-sm tracking-wide">
-              Create and manage your professional catalog.
+              Crea y gestiona tu catálogo profesional.
             </p>
           </div>
           <div className="flex items-center gap-4">
@@ -183,36 +160,36 @@ export default function AdminServiciosPage() {
                 onClick={() => openDialog()} 
                 className="bg-white text-black hover:bg-gray-200 text-xs tracking-widest uppercase font-light h-12 px-8 rounded-none shadow-xl transition-all"
               >
-                <Plus className="w-4 h-4 mr-2" /> New Service
+                <Plus className="w-4 h-4 mr-2" /> Nuevo Servicio
               </Button>
               <DialogContent className="bg-zinc-900 border-white/10 text-white rounded-none sm:max-w-[500px] p-8">
                 <form onSubmit={handleSubmit}>
                   <DialogHeader className="mb-8">
                     <DialogTitle className="text-2xl font-light tracking-widest uppercase">
-                      {editando ? 'Edit Service' : 'New Service'}
+                      {editando ? 'Editar Servicio' : 'Nuevo Servicio'}
                     </DialogTitle>
                     <DialogDescription className="text-gray-500 font-light text-xs tracking-widest uppercase mt-2">
-                       Define the details of your professional treatment.
+                       Definí los detalles de tu tratamiento profesional.
                     </DialogDescription>
                   </DialogHeader>
                   
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Service Name</Label>
+                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Nombre del Servicio</Label>
                       <Input 
                         required
                         className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
-                        placeholder="e.g. Executive Cut"
+                        placeholder="ej. Corte Ejecutivo"
                         value={form.nombre} 
                         onChange={(e) => setForm({ ...form, nombre: e.target.value })} 
                       />
                     </div>
                     
                     <div className="space-y-2">
-                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Description</Label>
+                      <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Descripción</Label>
                       <Input 
                         className="bg-black border-white/10 rounded-none h-12 text-sm focus-visible:ring-white/20 transition-all font-light"
-                        placeholder="Brief overview of the experience"
+                        placeholder="Breve resumen de la experiencia"
                         value={form.descripcion} 
                         onChange={(e) => setForm({ ...form, descripcion: e.target.value })} 
                       />
@@ -220,7 +197,7 @@ export default function AdminServiciosPage() {
                     
                     <div className="grid grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Price ($)</Label>
+                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Precio ($)</Label>
                         <Input 
                           required
                           type="number" 
@@ -230,7 +207,7 @@ export default function AdminServiciosPage() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Duration (min)</Label>
+                        <Label className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Duración (min)</Label>
                         <Input 
                           required
                           type="number" 
@@ -249,14 +226,14 @@ export default function AdminServiciosPage() {
                       onClick={() => setDialogOpen(false)}
                       className="w-full text-[10px] tracking-widest uppercase font-light hover:text-white hover:bg-white/5 rounded-none"
                     >
-                      Cancel
+                      Cancelar
                     </Button>
                     <Button 
                       type="submit" 
                       disabled={formLoading}
                       className="w-full bg-white text-black hover:bg-gray-200 text-[10px] tracking-widest uppercase font-light h-12 rounded-none transition-all shadow-lg"
                     >
-                      {formLoading ? 'Processing...' : (editando ? 'Update Service' : 'Create Service')}
+                      {formLoading ? 'Procesando...' : (editando ? 'Actualizar Servicio' : 'Crear Servicio')}
                     </Button>
                   </DialogFooter>
                 </form>
@@ -302,7 +279,7 @@ export default function AdminServiciosPage() {
                     {servicio.nombre}
                   </h3>
                   <p className="text-gray-500 font-light text-xs leading-relaxed line-clamp-2 h-8">
-                    {servicio.descripcion || 'Professional aesthetic treatment.'}
+                    {servicio.descripcion || 'Tratamiento estético profesional.'}
                   </p>
                 </div>
 
@@ -325,13 +302,13 @@ export default function AdminServiciosPage() {
         {servicios.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-32 border border-white/10 border-dashed animate-in fade-in zoom-in duration-500">
             <Settings className="w-12 h-12 text-zinc-900 mb-6" />
-            <p className="text-xs tracking-widest uppercase font-light text-gray-500">Empty Catalog</p>
+            <p className="text-xs tracking-widest uppercase font-light text-gray-500">Catálogo Vacío</p>
             <Button 
               variant="link" 
               onClick={() => openDialog()}
               className="mt-4 text-[10px] tracking-widest uppercase font-light text-white hover:text-gray-300 underline-offset-8"
             >
-              Add your first professional service
+              Agregá tu primer servicio profesional
             </Button>
           </div>
         )}

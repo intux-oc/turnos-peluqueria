@@ -119,35 +119,10 @@ export default function AdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Navigation */}
-      <nav className="sticky top-0 w-full z-50 px-6 py-6 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Peluquería
-        </div>
-        <div className="flex items-center gap-6">
-          <Button 
-            variant="ghost" 
-            className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-            onClick={() => router.push('/admin/servicios')}
-          >
-            <Settings className="w-4 h-4 mr-2" /> Services
-          </Button>
-          <Button 
-            variant="ghost" 
-            className="hidden md:flex text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-            onClick={() => router.push('/perfil')}
-          >
-            <Users className="w-4 h-4 mr-2" /> Profile
-          </Button>
-        </div>
-      </nav>
-
-      <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        
         {/* Header Section */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Admin Dashboard</h1>
+            <h1 className="text-4xl font-light tracking-wide mb-2 uppercase">Panel de Administración</h1>
             <p className="text-gray-500 font-light text-sm tracking-wide capitalize">
               {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
@@ -158,14 +133,14 @@ export default function AdminPage() {
               className="text-[10px] tracking-widest uppercase font-light text-gray-500 hover:text-white hover:bg-white/5 h-10 px-4 rounded-none border border-white/10 flex items-center gap-2"
               onClick={() => window.open(`/b/${barbershop.slug}`, '_blank')}
             >
-              <LinkIcon className="w-3.5 h-3.5" /> /b/{barbershop.slug}
+              <LinkIcon className="w-3.5 h-3.5" /> Ver Página Pública
             </Button>
             <Button 
               variant="outline" 
               className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all"
               onClick={() => fetchData(barbershop.id)}
             >
-              Refresh
+              Actualizar
             </Button>
           </div>
         </div>
@@ -175,7 +150,7 @@ export default function AdminPage() {
           <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Appointments</p>
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Turnos del Día</p>
                 <CalendarIcon className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-light">{stats.total}</p>
@@ -185,7 +160,7 @@ export default function AdminPage() {
           <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Pending</p>
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Pendientes</p>
                 <Clock className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-light">{stats.pendientes}</p>
@@ -195,7 +170,7 @@ export default function AdminPage() {
           <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Confirmed</p>
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Confirmados</p>
                 <CheckCircle2 className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-light">{stats.confirmados}</p>
@@ -205,7 +180,7 @@ export default function AdminPage() {
           <Card className="bg-zinc-900/50 border-white/10 rounded-none overflow-hidden relative group transition-all hover:border-white/30">
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
-                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Daily Revenue</p>
+                <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Recaudación Diaria</p>
                 <DollarSign className="w-4 h-4 text-gray-600" />
               </div>
               <p className="text-3xl font-light">${stats.recaudacion}</p>
@@ -216,10 +191,10 @@ export default function AdminPage() {
         {/* Schedule Board */}
         <div className="space-y-6">
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <h2 className="text-sm tracking-widest uppercase font-light text-white">Daily Agenda</h2>
+            <h2 className="text-sm tracking-widest uppercase font-light text-white">Agenda del Día</h2>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">Live Updates</span>
+              <span className="text-[10px] tracking-widest uppercase font-light text-gray-500">Actualizado en Vivo</span>
             </div>
           </div>
 
@@ -227,7 +202,7 @@ export default function AdminPage() {
             {turnos.length === 0 ? (
               <div className="py-24 px-6 border border-white/10 border-dashed text-center">
                 <CalendarClock className="w-10 h-10 text-gray-600 mx-auto mb-4" />
-                <p className="text-sm font-light text-gray-500 tracking-wide">No appointments scheduled for today.</p>
+                <p className="text-sm font-light text-gray-500 tracking-wide">No hay turnos programados para hoy.</p>
               </div>
             ) : (
               turnos.map((turno) => (
@@ -273,7 +248,7 @@ export default function AdminPage() {
                           onClick={() => actualizarEstado(turno.id, 'confirmado')}
                           className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
                         >
-                          Confirm
+                          Confirmar
                         </Button>
                       )}
                       {turno.estado === 'confirmado' && (
@@ -281,14 +256,14 @@ export default function AdminPage() {
                           onClick={() => actualizarEstado(turno.id, 'completado')}
                           className="h-10 px-6 text-[10px] tracking-widest uppercase font-light bg-white text-black hover:bg-gray-200 rounded-none transition-all"
                         >
-                          Complete
+                          Completar
                         </Button>
                       )}
                       <Button 
                         variant="ghost" 
                         size="icon" 
                         className="h-10 w-10 text-gray-600 hover:text-white hover:bg-white/5 rounded-none"
-                        title="Cancel Appointment"
+                        title="Cancelar Turno"
                         onClick={() => actualizarEstado(turno.id, 'cancelado')}
                       >
                         <Settings className="w-4 h-4" />

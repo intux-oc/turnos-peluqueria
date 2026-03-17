@@ -33,67 +33,31 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       <Toaster theme="dark" />
       
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="text-2xl font-light tracking-widest uppercase">Peluquería</div>
-          
-          <div className="flex items-center gap-6">
-            {user ? (
-              <Button 
-                variant="ghost" 
-                className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-sm"
-                onClick={() => router.push('/perfil')}
-              >
-                <UserIcon className="w-4 h-4 mr-2" />
-                Mi Perfil
-              </Button>
-            ) : (
-              <Button 
-                variant="ghost" 
-                className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-sm"
-                onClick={() => router.push('/login')}
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Ingresar
-              </Button>
-            )}
-            
-            <Button 
-              className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest text-sm px-8"
-              onClick={() => user ? router.push('/turnos') : router.push('/login')}
-            >
-              Agendar Turno
-            </Button>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero Section */}
-      <section className="relative pt-40 pb-32 px-6 flex flex-col items-center justify-center min-h-[90vh] text-center overflow-hidden">
+      <section className="relative py-32 px-6 flex flex-col items-center justify-center min-h-[80vh] text-center overflow-hidden">
         {/* Subtle background glow */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/2 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center">
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-sm tracking-widest uppercase mb-12 text-gray-400">
             <span className="w-2 h-2 rounded-full bg-white" />
-            Premium Hair Care
+            Cuidado Capilar Premium
           </div>
           
           <h1 className="text-6xl md:text-8xl font-light tracking-tighter mb-8 leading-tight">
-            ELEVATE YOUR<br />
-            <span className="font-serif italic text-gray-400">Style</span>
+            ELEVA TU<br />
+            <span className="font-serif italic text-gray-400">Estilo</span>
           </h1>
           
           <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl font-light leading-relaxed">
-            Experience the finest hair and grooming services in a minimalist, premium environment. Book your exclusive session today.
+            Experimenta los mejores servicios de peluquería y estética en un entorno minimalista y premium. Reserva tu sesión exclusiva hoy mismo.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto">
             <Button 
               size="lg" 
-              className="h-16 px-10 text-sm tracking-widest uppercase bg-white text-black hover:bg-gray-200 transition-all hover:scale-105"
-              onClick={() => user ? router.push('/turnos') : router.push('/login')}
+              className="h-16 px-10 text-sm tracking-widest uppercase bg-white text-black hover:bg-gray-200 transition-all hover:scale-105 rounded-none"
+              onClick={() => user ? router.push('/turnos/nuevo') : router.push('/login')}
             >
               <Calendar className="w-5 h-5 mr-3" />
               {user ? 'Agendar mi turno' : 'Ingresar para Reservar'}
@@ -102,7 +66,7 @@ export default function Home() {
             <Button 
               size="lg" 
               variant="outline" 
-              className="h-16 px-10 text-sm tracking-widest uppercase border-white/20 hover:bg-white hover:text-black transition-all"
+              className="h-16 px-10 text-sm tracking-widest uppercase border-white/20 hover:bg-white hover:text-black transition-all rounded-none"
               onClick={() => document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' })}
             >
               Nuestros Servicios
