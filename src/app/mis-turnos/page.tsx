@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Calendar, Clock, Banknote, CalendarX2, CheckCircle2, XCircle, ArrowLeft, MoreHorizontal, User as UserIcon } from 'lucide-react'
+import { Calendar, Clock, Banknote, CalendarX2, CheckCircle2, XCircle, ArrowLeft, MoreHorizontal, User as UserIcon, Star } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Textarea } from '@/components/ui/textarea'
 
 interface Turno {
   id: string
@@ -25,8 +27,11 @@ export default function MisTurnosPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
-  const [turnos, setTurnos] = useState<Turno[]>([])
+  const [turnos, setTurnos] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [rating, setRating] = useState(5)
+  const [comment, setComment] = useState('')
 
   useEffect(() => {
     const checkUser = async () => {
@@ -51,7 +56,9 @@ export default function MisTurnosPage() {
         fecha_hora,
         estado,
         notas,
-        servicio:servicios(nombre, precio, duracion_minutos)
+        barbershop_id,
+        servicio:servicios(nombre, precio, duracion_minutos),
+        review:reviews(id, rating, comment)
       `)
       .eq('cliente_id', userId)
       .order('fecha_hora', { ascending: true })
@@ -86,6 +93,30 @@ export default function MisTurnosPage() {
           border: '1px solid rgba(239, 68, 68, 0.2)'
         }
       })
+    }
+  }
+
+  const handleReview = async (turnoId: string, barbershopId: string) => {
+    if (!user) return
+    setSubmittingReview(true)
+    try {
+      const { error } = await supabase
+        .from('reviews')
+        .insert({
+          turno_id: turnoId,
+          barbershop_id: barbershopId,
+          cliente_id: user.id,
+          rating,
+          comment
+        })
+
+      if (error) throw error
+      toast.success('¡Gracias por tu reseña!')
+      fetchTurnos(user.id)
+    } catch (error: any) {
+      toast.error('Error al enviar reseña: ' + error.message)
+    } finally {
+      setSubmittingReview(false)
     }
   }
 
@@ -163,9 +194,54 @@ export default function MisTurnosPage() {
                  Cancelar
                </Button>
             ) : (
+              <div className="flex items-center gap-2">
+                {turno.estado === 'completado' && !(turno as any).review?.[0] && (
+                  <Dialog>
+                    <DialogTrigger render={
+                      <Button variant="outline" className="h-10 border-white/20 text-xs tracking-widest uppercase font-light rounded-none hover:bg-white hover:text-black">
+                        Calificar
+                      </Button>
+                    } />
+                    <DialogContent className="bg-black border-white/10 text-white rounded-none">
+                      <DialogHeader>
+                        <DialogTitle className="text-xl font-light tracking-wide uppercase">Tu Experiencia</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-6 pt-4">
+                        <div className="flex justify-center gap-2">
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <button key={s} onClick={() => setRating(s)}>
+                              <Star className={`w-8 h-8 ${rating >= s ? 'fill-white text-white' : 'text-gray-700'}`} />
+                            </button>
+                          ))}
+                        </div>
+                        <Textarea 
+                          placeholder="Contanos qué te pareció el servicio..."
+                          className="min-h-[100px]"
+                          value={comment}
+                          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setComment(e.target.value)}
+                        />
+                        <Button 
+                          onClick={() => handleReview(turno.id, (turno as any).barbershop_id)}
+                          className="w-full bg-white text-black hover:bg-gray-200 rounded-none h-12 tracking-widest uppercase font-light"
+                          disabled={submittingReview}
+                        >
+                          {submittingReview ? 'Enviando...' : 'Enviar Reseña'}
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                )}
+                {turno.estado === 'completado' && (turno as any).review?.[0] && (
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star key={s} className={`w-3 h-3 ${(turno as any).review[0].rating >= s ? 'fill-white text-white' : 'text-gray-800'}`} />
+                    ))}
+                  </div>
+                )}
                 <Button variant="ghost" className="w-10 h-10 p-0 text-gray-500 hover:text-white hover:bg-white/5 rounded-none">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
+              </div>
             )}
           </div>
         </div>

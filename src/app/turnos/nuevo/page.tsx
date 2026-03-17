@@ -32,6 +32,8 @@ export default function NuevoTurnoPage() {
   const [hora, setHora] = useState('')
   const [notas, setNotas] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [horariosOcupados, setHorariosOcupados] = useState<Set<string>>(new Set())
+  const [miPeluqueriaId, setMiPeluqueriaId] = useState<string>('')
 
   useEffect(() => {
     const checkUser = async () => {
@@ -43,6 +45,14 @@ export default function NuevoTurnoPage() {
       setUser(user)
     }
     checkUser()
+
+    const fetchMyBarbershop = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase.from('barbershops').select('id').eq('owner_id', user.id).single()
+      if (data) setMiPeluqueriaId(data.id)
+    }
+    fetchMyBarbershop()
 
     const fetchServicios = async () => {
       const { data, error } = await supabase
@@ -56,19 +66,52 @@ export default function NuevoTurnoPage() {
     fetchServicios()
   }, [supabase, router])
 
+  useEffect(() => {
+    const fetchOcupados = async () => {
+      if (!fecha || !miPeluqueriaId) return
+      
+      const start = new Date(fecha)
+      start.setHours(0, 0, 0, 0)
+      const end = new Date(fecha)
+      end.setHours(23, 59, 59, 999)
+
+      const { data } = await supabase
+        .from('turnos')
+        .select('fecha_hora')
+        .eq('barbershop_id', miPeluqueriaId)
+        .gte('fecha_hora', start.toISOString())
+        .lte('fecha_hora', end.toISOString())
+        .in('estado', ['pendiente', 'confirmado'])
+
+      if (data) {
+        const ocupados = new Set(
+          data.map(t => {
+            const d = new Date(t.fecha_hora)
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+          })
+        )
+        setHorariosOcupados(ocupados)
+      }
+    }
+    fetchOcupados()
+  }, [fecha, miPeluqueriaId, supabase])
+
   const servicioSeleccionado = servicios.find(s => s.id === servicioId)
 
   const horasDisponibles = () => {
     if (!fecha || !servicioSeleccionado) return []
     const horas = []
-    const duracion = servicioSeleccionado.duracion_minutos
     
-    // Horario ejemplo: 9:00 a 19:00
+    // Horario ejemplo: 9:00 a 18:30 (intervalos de 30 min)
     for (let h = 9; h <= 18; h++) {
-      if (h + duracion/60 <= 19) {
-        horas.push(`${h.toString().padStart(2, '0')}:00`)
-        if (duracion <= 30) {
-          horas.push(`${h.toString().padStart(2, '0')}:30`)
+      for (const m of [0, 30]) {
+        if (h === 18 && m === 30) break
+        
+        const timeString = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+        
+        // Solo añadimos la hora si NO está en el Set de horariosOcupados
+        if (!horariosOcupados.has(timeString)) {
+           horas.push(timeString)
         }
       }
     }
@@ -90,6 +133,7 @@ export default function NuevoTurnoPage() {
       fechaHora.setHours(parseInt(horas), parseInt(minutos), 0, 0)
 
       const { error } = await supabase.from('turnos').insert({
+        barbershop_id: miPeluqueriaId,
         cliente_id: user.id,
         servicio_id: servicioId,
         fecha_hora: fechaHora.toISOString(),
@@ -97,7 +141,16 @@ export default function NuevoTurnoPage() {
         estado: 'pendiente',
       })
 
-      if (error) throw error
+      if (error) {
+        if (error.code === '23505') {
+          toast.error('¡Ups! Alguien acaba de reservar este horario.', {
+            description: 'Por favor, selecciona otro horario disponible.'
+          })
+        } else {
+          throw error
+        }
+        return
+      }
 
       toast.success('¡Turno reservado con éxito!', {
         style: { background: '#1a1a1a', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' }

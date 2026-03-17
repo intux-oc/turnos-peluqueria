@@ -6,15 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { Scissors, Clock, ArrowRight, CalendarDays, Check, MapPin, Phone } from 'lucide-react'
+import { Scissors, Clock, ArrowRight, CalendarDays, Check, MapPin, Phone, Users, User } from 'lucide-react'
 
-interface Barbershop {
-  id: string
-  name: string
-  slug: string
-  address: string | null
-  phone: string | null
-}
+import { Barbershop, Empleado } from '@/types/database'
 
 interface Servicio {
   id: string
@@ -38,11 +32,13 @@ export default function PublicBookingPage() {
 
   const [barbershop, setBarbershop] = useState<Barbershop | null>(null)
   const [servicios, setServicios] = useState<Servicio[]>([])
-  const [selectedService, setSelectedService] = useState<Servicio | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [employees, setEmployees] = useState<Empleado[]>([])
+  const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null)
+  const [selectedEmployee, setSelectedEmployee] = useState<Empleado | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [booking, setBooking] = useState(false)
   const [notFound, setNotFound] = useState(false)
 
@@ -64,19 +60,21 @@ export default function PublicBookingPage() {
   }, [barbershop])
 
   useEffect(() => {
-    if (selectedDate && selectedService) generateTimeSlots()
+    if (selectedDate && selectedServicio) generateTimeSlots()
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedService])
+  }, [selectedDate, selectedServicio])
 
   const fetchBarbershop = async () => {
     const { data, error } = await supabase
       .from('barbershops')
-      .select('id, name, slug, address, phone')
+      .select('id, name, slug, address, phone, primary_color, secondary_color, logo_url')
       .eq('slug', slug)
       .single()
 
     if (error || !data) { setNotFound(true); return }
-    setBarbershop(data)
+    const shop = data as unknown as Barbershop
+    setBarbershop(shop)
+    fetchEmployees(shop.id)
   }
 
   const fetchServicios = async () => {
@@ -89,8 +87,18 @@ export default function PublicBookingPage() {
     setServicios(data ?? [])
   }
 
+  const fetchEmployees = async (shopId: string) => {
+    const { data } = await supabase
+      .from('empleados')
+      .select('*')
+      .eq('barbershop_id', shopId)
+      .eq('activo', true)
+    
+    setEmployees(data || [])
+  }
+
   const generateTimeSlots = async () => {
-    if (!selectedDate || !selectedService || !barbershop) return
+    if (!selectedDate || !selectedServicio || !barbershop) return
 
     // Generate slots from 9:00 to 18:30 every 30 min
     const slots: TimeSlot[] = []
@@ -127,7 +135,7 @@ export default function PublicBookingPage() {
   }
 
   const handleBook = async () => {
-    if (!selectedService || !selectedDate || !selectedTime || !barbershop) return
+    if (!selectedServicio || !selectedDate || !selectedTime || !barbershop) return
     setBooking(true)
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -142,21 +150,38 @@ export default function PublicBookingPage() {
     const fechaHora = new Date(selectedDate)
     fechaHora.setHours(h, m, 0, 0)
 
-    const { error } = await supabase.from('turnos').insert({
+    const { data: insertedTurno, error } = await supabase.from('turnos').insert({
       barbershop_id: barbershop.id,
       cliente_id: user.id,
-      servicio_id: selectedService.id,
+      servicio_id: selectedServicio.id,
+      empleado_id: selectedEmployee?.id || null,
       fecha_hora: fechaHora.toISOString(),
       estado: 'pendiente',
-    })
+    }).select().single()
 
     if (error) {
-      toast.error('No se pudo confirmar el turno', { description: error.message })
+      if (error.code === '23505') {
+        toast.error('¡Ups! Alguien acaba de reservar este horario.', {
+          description: 'Por favor, selecciona otro horario disponible.'
+        })
+        generateTimeSlots() 
+      } else {
+        toast.error('No se pudo confirmar el turno', { description: error.message })
+      }
       setBooking(false)
       return
     }
 
-    toast.success('¡Turno reservado!', { description: `${selectedService.nombre} el ${selectedDate.toLocaleDateString('es-AR')} a las ${selectedTime}` })
+    // Enviar email de confirmación (background)
+    if (insertedTurno) {
+      fetch('/api/notifications/email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ turnoId: insertedTurno.id })
+      }).catch(err => console.error('Error enviando mail:', err))
+    }
+    
+    toast.success('¡Turno reservado!', { description: `${selectedServicio.nombre} el ${selectedDate.toLocaleDateString('es-AR')} a las ${selectedTime}` })
     router.push('/mis-turnos')
   }
 
@@ -180,13 +205,21 @@ export default function PublicBookingPage() {
     )
   }
 
-  const stepLabel = ['Elegí un servicio', 'Elegí fecha y hora', 'Confirmá tu turno']
+  const stepLabel = ['Elegí un servicio', 'Elegí fecha y hora', 'Elegí profesional', 'Confirmá tu turno']
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full px-6 py-5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase">{barbershop.name}</div>
+        <div className="flex items-center gap-4">
+          {barbershop.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={barbershop.logo_url} alt={barbershop.name} className="h-8 w-auto object-contain" />
+          )}
+          <div className="text-xl font-light tracking-widest uppercase" style={{ color: barbershop.primary_color || 'white' }}>
+            {barbershop.name}
+          </div>
+        </div>
         <Button
           variant="ghost"
           className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
@@ -196,7 +229,13 @@ export default function PublicBookingPage() {
         </Button>
       </nav>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-6 py-12 md:py-20 animate-in fade-in duration-700">
+      <main 
+        className="flex-1 max-w-3xl w-full mx-auto px-6 py-12 md:py-20 animate-in fade-in duration-700"
+        style={{ 
+          '--primary': barbershop.primary_color || '#ffffff',
+          '--secondary': barbershop.secondary_color || '#000000'
+        } as React.CSSProperties}
+      >
 
         {/* Barbershop Info */}
         <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -220,12 +259,12 @@ export default function PublicBookingPage() {
 
         {/* Step Progress */}
         <div className="flex items-center gap-0 mb-10">
-          {[1, 2, 3].map((s, i) => (
+          {[1, 2, 3, 4].map((s, i) => (
             <div key={s} className="flex items-center flex-1">
               <div className={`w-8 h-8 flex items-center justify-center text-xs font-light tracking-wider border transition-all ${step === s ? 'bg-white text-black border-white' : step > s ? 'bg-white/20 border-white/20 text-white' : 'border-white/10 text-gray-600'}`}>
                 {step > s ? <Check className="w-3.5 h-3.5" /> : s}
               </div>
-              {i < 2 && <div className={`flex-1 h-px transition-all ${step > s ? 'bg-white/30' : 'bg-white/10'}`} />}
+              {i < 3 && <div className={`flex-1 h-px transition-all ${step > s ? 'bg-white/30' : 'bg-white/10'}`} />}
             </div>
           ))}
         </div>
@@ -243,8 +282,8 @@ export default function PublicBookingPage() {
               servicios.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => { setSelectedService(s); setStep(2) }}
-                  className={`flex items-center justify-between p-6 border text-left transition-all hover:border-white/40 ${selectedService?.id === s.id ? 'border-white bg-white/5' : 'border-white/10 bg-zinc-900/30'}`}
+                  onClick={() => { setSelectedServicio(s); setStep(2) }}
+                  className={`flex items-center justify-between p-6 border text-left transition-all hover:border-white/40 ${selectedServicio?.id === s.id ? 'border-white bg-white/5' : 'border-white/10 bg-zinc-900/30'}`}
                 >
                   <div className="flex items-center gap-6">
                     <div className="p-2.5 border border-white/5 bg-black">
@@ -268,15 +307,15 @@ export default function PublicBookingPage() {
         )}
 
         {/* Step 2: Select Date & Time */}
-        {step === 2 && selectedService && (
+        {step === 2 && selectedServicio && (
           <div className="space-y-8">
             {/* Selected service recap */}
             <div className="flex items-center justify-between p-4 border border-white/10 bg-zinc-900/30">
               <div className="flex items-center gap-3">
                 <Scissors className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-light">{selectedService.nombre}</span>
+                <span className="text-sm font-light">{selectedServicio?.nombre}</span>
               </div>
-              <button onClick={() => { setStep(1); setSelectedDate(null); setSelectedTime(null) }} className="text-[10px] tracking-widest uppercase text-gray-600 hover:text-white font-light">
+              <button onClick={() => { setStep(1); setSelectedDate(undefined); setSelectedTime(null) }} className="text-[10px] tracking-widest uppercase text-gray-600 hover:text-white font-light">
                 Cambiar
               </button>
             </div>
@@ -323,25 +362,79 @@ export default function PublicBookingPage() {
             <Button
               className="w-full bg-white text-black hover:bg-gray-200 text-xs tracking-widest uppercase font-light h-12 rounded-none disabled:opacity-30"
               disabled={!selectedDate || !selectedTime}
-              onClick={() => setStep(3)}
+              onClick={() => setStep(employees.length > 0 ? 3 : 4)}
             >
               Continuar <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         )}
 
-        {/* Step 3: Confirm */}
-        {step === 3 && selectedService && selectedDate && selectedTime && (
+        {/* Step 3: Select Professional */}
+        {step === 3 && employees.length > 0 && (
+          <div className="space-y-6">
+             <div className="grid grid-cols-1 gap-4">
+               <button
+                  onClick={() => { setSelectedEmployee(null); setStep(4) }}
+                  className={`flex items-center justify-between p-6 border text-left transition-all hover:border-white/40 ${selectedEmployee === null ? 'border-white bg-white/5' : 'border-white/10 bg-zinc-900/30'}`}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="p-2.5 border border-white/5 bg-black">
+                      <Users className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <h4 className="font-light tracking-wide text-white">Cualquier Profesional</h4>
+                      <p className="text-xs text-gray-500 font-light mt-0.5">Te asignaremos el primero disponible.</p>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-600" />
+                </button>
+
+                {employees.map((emp) => (
+                  <button
+                    key={emp.id}
+                    onClick={() => { setSelectedEmployee(emp); setStep(4) }}
+                    className={`flex items-center justify-between p-6 border text-left transition-all hover:border-white/40 ${selectedEmployee?.id === emp.id ? 'border-white bg-white/5' : 'border-white/10 bg-zinc-900/30'}`}
+                  >
+                    <div className="flex items-center gap-6">
+                      <div className="w-10 h-10 border border-white/10 overflow-hidden bg-black flex items-center justify-center">
+                        {emp.foto_url ? (
+                          <img src={emp.foto_url} alt={emp.nombre} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-4 h-4 text-gray-600" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-light tracking-wide text-white">{emp.nombre}</h4>
+                        <p className="text-xs text-gray-500 font-light mt-0.5">{emp.especialidad || 'Peluquero'}</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="w-4 h-4 text-gray-600" />
+                  </button>
+                ))}
+             </div>
+             <Button
+                variant="outline"
+                className="w-full border-white/10 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-12 rounded-none"
+                onClick={() => setStep(2)}
+              >
+                Atrás
+              </Button>
+          </div>
+        )}
+
+        {/* Step 4: Confirm */}
+        {step === 4 && selectedServicio && selectedDate && selectedTime && (
           <div className="space-y-6">
             <Card className="bg-zinc-900/40 border-white/10 rounded-none">
               <CardContent className="p-8 space-y-6">
                 <p className="text-[10px] tracking-widest uppercase text-gray-500 font-light">Resumen de tu turno</p>
 
                 {[
-                  { icon: <Scissors className="w-4 h-4 text-gray-500" />, label: 'Servicio', value: selectedService.nombre },
+                  { icon: <Scissors className="w-4 h-4 text-gray-500" />, label: 'Servicio', value: selectedServicio.nombre },
+                  { icon: <User className="w-4 h-4 text-gray-500" />, label: 'Profesional', value: selectedEmployee?.nombre || 'Cualquiera' },
                   { icon: <CalendarDays className="w-4 h-4 text-gray-500" />, label: 'Fecha', value: selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }) },
                   { icon: <Clock className="w-4 h-4 text-gray-500" />, label: 'Hora', value: selectedTime },
-                  { icon: <Clock className="w-4 h-4 text-gray-500" />, label: 'Duración', value: `${selectedService.duracion_minutos} min` },
+                  { icon: <Clock className="w-4 h-4 text-gray-500" />, label: 'Duración', value: `${selectedServicio.duracion_minutos} min` },
                 ].map(({ icon, label, value }) => (
                   <div key={label} className="flex items-center gap-4">
                     {icon}

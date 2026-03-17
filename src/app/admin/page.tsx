@@ -6,21 +6,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
-import { CalendarClock, CheckCircle2, Clock, Settings, Users, Calendar as CalendarIcon, DollarSign, Link as LinkIcon } from 'lucide-react'
+import { CalendarClock, CheckCircle2, Clock, Settings, Users, Calendar as CalendarIcon, DollarSign, Link as LinkIcon, Palette, CreditCard, BarChart, MessageSquare } from 'lucide-react'
 
-interface Turno {
-  id: string
-  fecha_hora: string
-  estado: string
-  cliente: { full_name: string; email: string } | null
-  servicio: { nombre: string; precio: number } | null
-}
-
-interface Barbershop {
-  id: string
-  name: string
-  slug: string
-}
+import { Turno, Barbershop } from '@/types/database'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -61,7 +49,7 @@ export default function AdminPage() {
         return
       }
 
-      setBarbershop(shop)
+      setBarbershop(shop as unknown as Barbershop)
       fetchData(shop.id)
     }
     checkUser()
@@ -75,15 +63,26 @@ export default function AdminPage() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const { data: turnsData } = await supabase
+    const { data: turnsData, error } = await supabase
       .from('turnos')
-      .select(`id, fecha_hora, estado, cliente:profiles!turnos_cliente_id_fkey(full_name, email), servicio:servicios(nombre, precio)`)
+      .select(`
+        id, 
+        fecha_hora, 
+        estado, 
+        cliente:profiles!turnos_cliente_id_fkey(full_name, email), 
+        servicio:servicios(nombre, precio, duracion_minutos)
+      `)
       .eq('barbershop_id', barbershopId)
       .gte('fecha_hora', today.toISOString())
       .lt('fecha_hora', tomorrow.toISOString())
       .order('fecha_hora')
 
-    if (turnsData) setTurnos(turnsData as any)
+    if (error) {
+      toast.error('Error al cargar turnos')
+      console.error(error)
+    } else if (turnsData) {
+      setTurnos(turnsData as unknown as Turno[])
+    }
     setLoading(false)
   }
 
@@ -135,6 +134,41 @@ export default function AdminPage() {
               onClick={() => window.open(`/b/${barbershop.slug}`, '_blank')}
             >
               <LinkIcon className="w-3.5 h-3.5" /> Ver Página Pública
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all flex items-center gap-2"
+              onClick={() => router.push('/admin/empleados')}
+            >
+              <Users className="w-3.5 h-3.5 text-gray-400" /> Equipo
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all flex items-center gap-2"
+              onClick={() => router.push('/admin/resenas')}
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-gray-400" /> Opiniones
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all flex items-center gap-2"
+              onClick={() => router.push('/admin/reportes')}
+            >
+              <BarChart className="w-3.5 h-3.5 text-gray-400" /> Reportes
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all flex items-center gap-2"
+              onClick={() => router.push('/admin/configuracion')}
+            >
+              <Palette className="w-3.5 h-3.5 text-gray-400" /> Personalización
+            </Button>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-zinc-900/50 hover:bg-white/5 text-xs tracking-widest uppercase font-light h-10 px-6 rounded-none transition-all flex items-center gap-2"
+              onClick={() => router.push('/admin/suscripcion')}
+            >
+              <CreditCard className="w-3.5 h-3.5 text-gray-400" /> Suscripción
             </Button>
             <Button 
               variant="outline" 
