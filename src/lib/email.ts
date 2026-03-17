@@ -1,6 +1,18 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+const getResendClient = () => {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.warn('Warning: RESEND_API_KEY is not defined.');
+      return null;
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+};
 
 export const sendEmail = async ({
   to,
@@ -12,6 +24,11 @@ export const sendEmail = async ({
   html: string;
 }) => {
   try {
+    const resend = getResendClient();
+    if (!resend) {
+      return { success: false, error: new Error('Resend client not initialized (missing API key)') };
+    }
+
     const { data, error } = await resend.emails.send({
       from: 'Turnos Peluquería <onboarding@resend.dev>', // Cambiar por dominio propio en producción
       to,

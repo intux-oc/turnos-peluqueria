@@ -1,41 +1,43 @@
-# Contexto del Rediseño UI - Turnos Peluquería
+# Contexto General del Sistema - Turnos Peluquería SaaS
 
-Se completó exitosamente el rediseño completo de la interfaz de usuario de la aplicación "Turnos Peluquería", migrando de un diseño básico a una experiencia "Premium" con temática oscura, elementos glassmorphism (cristal esmerilado), acentos dorados/ámbar y micro-interacciones suaves. Todo estructurado como Mobile-first garantizando perfecta usabilidad tanto en PC como celulares.
+Este documento resume el estado actual del sistema tras completar todas las fases de desarrollo. La aplicación ha evolucionado de un rediseño UI a una plataforma SaaS (Software as a Service) multi-tenant completa y profesional.
 
-## Archivos Modificados y Funcionalidades Añadidas
+## Arquitectura y Funcionalidades Principales
 
-### Configuración Global
-- `src/app/globals.css`: Se implementó el tema oscuro base (`background: #0a0a0a;`) y los colores primarios (ámbar/dorado).
-- `src/app/layout.tsx`: Se integró la fuente `Outfit` para darle un toque moderno y se agregó el `NavBar` en el layout para estar presente en toda la app.
-- `src/components/nav-bar.tsx`: Componente creado desde cero. Responsivo, con menú tipo hamburguesa para móviles y glassmorphism.
+### 1. Multi-tenant y Branding (Fases 1 & 2)
+- **Multi-tenant**: Cada peluquería tiene su propia URL única (`/b/slug`).
+- **Personalización Administrativa**: Los dueños pueden cambiar colores (Primario/Secundario) y logos desde su panel, aplicando el branding de forma automática en su landing de reservas.
+- **Glassmorphism Design**: Estética oscura premium constante en toda la aplicación.
 
-### Landing Page (Inicio)
-- `src/app/page.tsx`: Se rediseñó el Hero Section con texto de alto impacto, botones vibrantes (CTAs), y una grilla de servicios en tarjetas estilo glassmorphism con efectos hover.
+### 2. Gestión de Turnos y Equipo (Phase 2)
+- **Flujo de Reserva**: Selección intuitiva de servicio, profesional y horario con prevención de "double booking" mediante índices únicos en la base de datos.
+- **Gestión de Empleados**: Los administradores pueden añadir, editar y asignar servicios a su equipo de profesionales.
 
-### Autenticación
-- `src/app/login/page.tsx`: Formulario de Login y Registro centrado. Inputs estilizados con íconos, modo fondo oscuro y uso del sistema de toast notifications nativo refinado.
+### 3. Sistema de Pagos SaaS (Fase 3)
+- **Mercado Pago**: Integración centralizada para el cobro de suscripciones (mensuales/anuales) a las peluquerías.
+- **Webhooks**: Automatización de la activación de planes mediante notificaciones IPN.
+- **Panel de Suscripción**: Los dueños pueden ver su estado de suscripción y renovar sus planes fácilmente.
 
-### Flujo de Usuario y Reservas
-- `src/app/perfil/page.tsx`: Vista de Perfil de usuario con estética consistente. Inputs con fondos semitransparentes y validaciones claras en la actualización de datos.
-- `src/app/mis-turnos/page.tsx`: Vista en formato tarjeta para que los usuarios vean sus próximos turnos. Badges de estados, opción de cancelar, alertas de cancelación de 2hs y elementos con transparencia.
-- `src/app/turnos/nuevo/page.tsx` (Booking System): Un flujo paso-a-paso altamente intuitivo y hermoso para: 
-  1. Elegir servicio (con buscador y tarjetas visuales).
-  2. Elegir fecha (calendario integrado).
-  3. Elegir hora (grilla de horarios).
-  4. Confirmación con notas opcionales.
+### 4. Notificaciones por Email (Fase 4)
+- **Integración con Resend**: Envío automatizado de correos electrónicos.
+- **Templates Profesionales**: Confirmación de reserva para clientes y notificación de activación de suscripción para dueños.
 
-### Panel de Administración
-- `src/app/admin/page.tsx`: Dashboard principal renovado. Tarjetas de métricas (Total Turnos, Pendientes, Confirmados, Recaudación) con bordes iluminados al pasar el cursor y lista rica de la agenda de hoy.
-- `src/app/admin/servicios/page.tsx`: Gestión de servicios unificada. Listado mediante grillas y formularios modales con iconografía amigable. Botones claros para cambiar estado activo/inactivo con confirmaciones estilo "toast".
+### 5. Analytics y Reportes (Fase 5)
+- **Dashboard Estadístico**: Visualización de recaudación diaria y mensual mediante gráficos de área.
+- **Servicios Populares**: Gráficos de barras y circulares que muestran el rendimiento de los servicios del salón.
 
-## Tecnologías Utilizadas
-- Next.js (App Router)
-- React
-- Tailwind CSS v4 (Glassmorphism, gradientes, animaciones in)
-- Shadcn UI
-- Lucide-React (íconos prolijos a través de toda la app)
-- Sonner (Notificaciones de interfaz)
-- React Day Picker (Calendario)
+### 6. PWA y Feedback (Fase 6)
+- **Instalabilidad (PWA)**: Soporte nativo para móviles con manifest, iconos premium y Service Worker para carga rápida.
+- **Sistema de Reseñas**: Los clientes pueden calificar su experiencia (estrellas + comentario) y los administradores pueden gestionar este feedback.
+- **Optimización SEO**: Metadatos profesionales (OpenGraph/Twitter) para compartir enlaces correctamente.
 
-## Siguientes Pasos
-Se sugiere ejecutar `npm run dev` para corroborar visualmente todas las instancias tanto en versión Desktop como forzando la vista Mobile a través de las herramientas del desarrollador del navegador.
+## Componentes Técnicos Clave
+- **Frontend**: Next.js 16, Tailwind CSS v4, Lucide Icons, Recharts.
+- **Backend/DB**: Supabase (PostgreSQL), RLS (Row Level Security) para protección de datos.
+- **Archivo de Verdad**: `supabase/schema.sql` contiene la estructura completa y definitiva.
+- **Documentación Técnica**: `TECH_STACK.md`.
+
+## Acceso Rápido
+- **Admin**: `/admin`
+- **Público**: `/b/[slug]`
+- **SuperAdmin**: `/super-admin` (Gestión global de la plataforma).
