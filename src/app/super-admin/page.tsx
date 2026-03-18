@@ -15,7 +15,7 @@ interface BarbershopRow {
   owner: { full_name: string | null; email: string | null }
   subscription: {
     status: string
-    plan: string
+    plan_id: string
     current_period_end: string | null
     amount: number | null
   } | null
@@ -65,7 +65,7 @@ export default function SuperAdminPage() {
         .select(`
           id, name, slug, created_at,
           owner:profiles!owner_id(full_name, email),
-          subscription:subscriptions(status, plan, current_period_end, amount)
+          subscription:subscriptions(status, plan_id, current_period_end, amount)
         `)
         .order('created_at', { ascending: false })
 
@@ -193,7 +193,7 @@ export default function SuperAdminPage() {
                       {statusIcon(shop.subscription?.status)}
                       <span className="text-[10px] tracking-widest uppercase font-light text-gray-400">
                         {statusLabel(shop.subscription?.status)}
-                        {shop.subscription?.plan ? ` · ${shop.subscription.plan}` : ''}
+                        {shop.subscription?.plan_id ? ` · ${shop.subscription.plan_id}` : ''}
                       </span>
                     </div>
                     {shop.subscription?.amount && (

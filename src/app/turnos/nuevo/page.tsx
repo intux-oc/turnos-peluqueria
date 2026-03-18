@@ -30,26 +30,50 @@ export default function NuevoTurnoPage() {
   const [miPeluqueriaId, setMiPeluqueriaId] = useState<string>('')
 
   useEffect(() => {
-    const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      setUser(user)
-    }
-    checkUser()
+    const initData = async () => {
+      setLoading(true)
+      try {
+        // 1. Obtener usuario una sola vez
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) { router.push('/login'); return }
+        setUser(user)
 
-    const fetchMyBarbershop = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      const { data } = await supabase.from('barbershops').select('id').eq('owner_id', user.id).single()
-      if (data) setMiPeluqueriaId(data.id)
-    }
-    fetchMyBarbershop()
+        // 2. Obtener peluquería vinculada
+        const { data: shop, error: shopError } = await supabase
+          .from('barbershops')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle()
+        
+        if (shopError) throw shopError
+        
+        if (!shop) {
+          toast.error('No tenés ninguna peluquería registrada')
+          router.push('/pagar')
+          return
+        }
+        
+        setMiPeluqueriaId(shop.id)
 
-    const fetchServicios = async () => {
-      const { data, error } = await supabase.from('servicios').select('*').eq('activo', true).order('nombre')
-      if (!error && data) setServicios(data)
+        // 3. Cargar servicios FILTRADOS por peluquería
+        const { data: svcs, error: svcsError } = await supabase
+          .from('servicios')
+          .select('*')
+          .eq('barbershop_id', shop.id)
+          .eq('activo', true)
+          .order('nombre')
+        
+        if (svcsError) throw svcsError
+        if (svcs) setServicios(svcs)
+
+      } catch (error: any) {
+        toast.error('Error al cargar datos', { description: error.message })
+      } finally {
+        setLoading(false)
+      }
     }
-    fetchServicios()
+    
+    initData()
   }, [supabase, router])
 
   useEffect(() => {

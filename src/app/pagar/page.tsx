@@ -84,7 +84,7 @@ function PagarContent() {
         .from('subscriptions')
         .insert({
           barbershop_id: shop.id,
-          plan: planId,
+          plan_id: planId,
           status: 'active',
           current_period_start: now.toISOString(),
           current_period_end: periodEnd.toISOString(),
@@ -125,7 +125,24 @@ function PagarContent() {
       <main className="max-w-4xl mx-auto px-6 grid md:grid-cols-2 gap-12 mt-12">
         {/* Form Section */}
         <section>
-          <h2 className="text-3xl font-bold tracking-tight mb-8">Configura tu peluquería</h2>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <h2 className="text-3xl font-bold tracking-tight">Configura tu peluquería</h2>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => {
+                setForm({
+                  barbershopName: 'Peluquería de Prueba',
+                  slug: `test-shop-${Math.floor(Math.random() * 1000)}`,
+                  address: 'Calle Falsa 123',
+                  phone: '+54 9 11 1234-5678'
+                })
+              }}
+              className="text-xs uppercase tracking-widest font-light border-white/20 hover:bg-white/5"
+            >
+              Autocompletar Prueba
+            </Button>
+          </div>
           
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">

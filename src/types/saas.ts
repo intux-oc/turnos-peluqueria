@@ -63,7 +63,7 @@ export interface Barbershop {
 export interface Subscription {
   id: string
   barbershop_id: string
-  plan: 'mensual' | 'anual'
+  plan_id: 'mensual' | 'anual'
   status: 'trialing' | 'active' | 'past_due' | 'canceled' | 'expired'
   current_period_start: string | null
   current_period_end: string | null
