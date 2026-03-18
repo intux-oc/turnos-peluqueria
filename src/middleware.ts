@@ -23,8 +23,9 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANTE: getUser() es la forma segura de verificar la sesión
-  const { data: { user } } = await supabase.auth.getUser()
+  // getSession() es ultra rápido porque solo valida el JWT local en la cookie.
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
   const pathname = request.nextUrl.pathname
 
   // 1. Proteger rutas de administración

@@ -64,6 +64,8 @@ CREATE TABLE IF NOT EXISTS servicios (
   precio DECIMAL(10, 2) NOT NULL,
   duracion_minutos INTEGER NOT NULL,
   activo BOOLEAN DEFAULT true,
+  requiere_senia BOOLEAN DEFAULT false,
+  monto_senia_porcentaje DECIMAL(5, 2) DEFAULT 30.00,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -113,7 +115,45 @@ CREATE POLICY "Clients can create turns" ON turnos FOR INSERT WITH CHECK (auth.u
 CREATE POLICY "Admin can manage own barbershop turnos" ON turnos
   FOR ALL USING (EXISTS (SELECT 1 FROM barbershops WHERE id = barbershop_id AND owner_id = auth.uid()));
 
+-- Prevenir Overbooking por Rangos de Tiempo (PostgreSQL Avanzado)
+CREATE OR REPLACE FUNCTION check_turno_overlap() RETURNS TRIGGER AS $$
+DECLARE
+  duracion INT;
+BEGIN
+  -- Obtener la duración del servicio
+  SELECT duracion_minutos INTO duracion FROM servicios WHERE id = NEW.servicio_id;
+
+  IF EXISTS (
+    SELECT 1 FROM turnos 
+    WHERE empleado_id = NEW.empleado_id
+      AND barbershop_id = NEW.barbershop_id
+      AND estado IN ('pendiente', 'confirmado')
+      AND id != NEW.id -- Ignorar a sí mismo en caso de UPDATE
+      AND (
+        -- Verifica si hay superposición real de rangos de tiempo
+        (NEW.fecha_hora, NEW.fecha_hora + (duracion || ' minutes')::interval) 
+        OVERLAPS 
+        (fecha_hora, fecha_hora + (
+          SELECT duracion_minutos 
+          FROM servicios 
+          WHERE id = turnos.servicio_id
+        ) * interval '1 minute')
+      )
+  ) THEN
+    RAISE EXCEPTION 'El empleado ya tiene un turno asignado en ese rango de horario.';
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS prevent_turno_overlap ON turnos;
+CREATE TRIGGER prevent_turno_overlap
+BEFORE INSERT OR UPDATE ON turnos
+FOR EACH ROW EXECUTE FUNCTION check_turno_overlap();
+
 -- Prevenir Double Booking (Un turno por hora por peluquería si está confirmado/pendiente)
+-- (Mantenemos el índice unique para compatibilidad simple, aunque el trigger es más potente)
 CREATE UNIQUE INDEX IF NOT EXISTS unique_turno_hora 
 ON turnos (barbershop_id, fecha_hora) 
 WHERE estado IN ('pendiente', 'confirmado');
@@ -173,11 +213,41 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can view reviews" ON reviews FOR SELECT USING (true);
 CREATE POLICY "Users can create their own reviews" ON reviews FOR INSERT WITH CHECK (auth.uid() = cliente_id);
+-- Función auxiliar para optimizar chequeos de administración (STABLE para caché por transacción)
+CREATE OR REPLACE FUNCTION is_admin_of(b_id UUID) 
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM barbershops 
+    WHERE id = b_id AND owner_id = auth.uid()
+  );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
+
+-- 3. Tabla servicios
+-- ... (código previo)
+CREATE POLICY "Admin can manage own barbershop servicios" ON servicios
+  FOR ALL USING (is_admin_of(barbershop_id));
+
+-- 4. Tabla empleados
+-- ... (código previo)
+CREATE POLICY "Admin can manage own barbershop empleados" ON empleados
+  FOR ALL USING (is_admin_of(barbershop_id));
+
+-- 5. Tabla turnos
+-- ... (código previo)
+CREATE POLICY "Admin can manage own barbershop turnos" ON turnos
+  FOR ALL USING (is_admin_of(barbershop_id));
+
+-- 6. Tabla horarios
+-- ... (código previo)
+CREATE POLICY "Admin can manage own horarios" ON horarios
+  FOR ALL USING (is_admin_of(barbershop_id));
+
+-- 7. Tabla suscripciones
+CREATE POLICY "Owners can view their own subscriptions" ON subscriptions
+  FOR SELECT USING (is_admin_of(barbershop_id));
+
+-- 8. Tabla reviews
 CREATE POLICY "Owners can view and manage shop reviews" ON reviews
-    FOR ALL USING (
-        EXISTS (
-            SELECT 1 FROM barbershops 
-            WHERE barbershops.id = reviews.barbershop_id 
-            AND barbershops.owner_id = auth.uid()
-        )
-    );
+  FOR ALL USING (is_admin_of(barbershop_id));

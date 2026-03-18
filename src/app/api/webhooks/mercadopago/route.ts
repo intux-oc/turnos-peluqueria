@@ -42,6 +42,18 @@ export async function POST(request: Request) {
 
     if (barbershopId) {
       if (status === 'approved') {
+        // 0. Idempotencia: Verificar si este pago ya fue procesado
+        const { data: existingSub } = await supabase
+          .from('subscriptions')
+          .select('mp_payment_id')
+          .eq('barbershop_id', barbershopId)
+          .single()
+
+        if (existingSub?.mp_payment_id === paymentId.toString()) {
+          console.log(`Pago ${paymentId} ya procesado para ${barbershopId}`)
+          return NextResponse.json({ success: true, message: 'Already processed' })
+        }
+
         // 1. Actualizar suscripción a activa
         // Calculamos 31 días a partir de ahora para el plan mensual
         const endDate = new Date()
@@ -55,7 +67,7 @@ export async function POST(request: Request) {
             current_period_end: endDate.toISOString()
           })
           .eq('barbershop_id', barbershopId)
-          .eq('status', 'pending')
+          .in('status', ['pending', 'past_due', 'expired']) // Permitir reactivación
 
         // Enviar email al dueño
         const { data: shop } = await supabase
