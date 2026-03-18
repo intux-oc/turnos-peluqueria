@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -66,16 +66,26 @@ export function NavBar() {
     ] : []),
   ];
 
+  const pathname = usePathname();
+  const isBookingPage = pathname.startsWith("/b/");
+
+  if (isBookingPage) return null;
+
   return (
-    <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-xl">
+    <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-black/50 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
         <Link 
           href="/" 
-          className="text-2xl font-light tracking-widest uppercase hover:opacity-80 transition-opacity" 
+          className="flex items-center gap-2 group transition-opacity hover:opacity-90" 
           onClick={() => setMobileMenuOpen(false)}
         >
-          Peluquería
+          <div className="w-8 h-8 bg-white flex items-center justify-center">
+            <Scissors className="w-4 h-4 text-black" />
+          </div>
+          <span className="text-xl font-light tracking-widest uppercase">
+            Intux Oc
+          </span>
         </Link>
 
         {/* Desktop Nav */}
@@ -84,48 +94,56 @@ export function NavBar() {
             <Link 
               key={link.href} 
               href={link.href} 
-              className="text-sm font-light text-gray-400 transition-colors hover:text-white uppercase tracking-widest"
+              className="text-[10px] font-light text-gray-400 transition-colors hover:text-white uppercase tracking-widest"
             >
               {link.label}
             </Link>
           ))}
           
-          <div className="h-6 w-px bg-white/10 mx-2" />
+          <div className="h-4 w-px bg-white/10 mx-2" />
 
           {user ? (
             <Button 
               variant="ghost" 
-              className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-xs font-light"
+              className="text-gray-400 hover:text-white hover:bg-white/5 uppercase tracking-widest text-[10px] font-light h-8"
               onClick={handleSignOut}
             >
-              <LogOut className="w-4 h-4 mr-2" />
+              <LogOut className="w-3.5 h-3.5 mr-2" />
               Salir
             </Button>
           ) : (
             <Button 
               variant="ghost" 
-              className="text-gray-300 hover:text-white hover:bg-white/5 uppercase tracking-widest text-xs font-light"
+              className="text-gray-400 hover:text-white hover:bg-white/5 uppercase tracking-widest text-[10px] font-light h-8"
               onClick={() => router.push("/login")}
             >
-              <LogIn className="w-4 h-4 mr-2" />
+              <LogIn className="w-3.5 h-3.5 mr-2" />
               Ingresar
             </Button>
           )}
           
           <Button 
-            className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest text-xs font-light px-8 h-10 rounded-none"
-            onClick={() => router.push(user ? "/turnos/nuevo" : "/login")}
+            className="bg-white text-black hover:bg-gray-200 uppercase tracking-widest text-[10px] font-light px-6 h-8 rounded-none transition-all active:scale-95"
+            onClick={() => {
+              if (!user) {
+                router.push('/planes')
+              } else if (isAdmin) {
+                router.push('/admin')
+              } else {
+                router.push('/turnos/nuevo')
+              }
+            }}
           >
-            Agendar Turno
+            {user ? (isAdmin ? 'Dashboard' : 'Agendar Turno') : 'Registrar mi Negocio'}
           </Button>
         </div>
 
         {/* Mobile Menu Toggle */}
         <button 
-          className="md:hidden text-white p-2" 
+          className="md:hidden text-white p-2 hover:bg-white/5 rounded-lg transition-colors" 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          {mobileMenuOpen ? <X /> : <Menu />}
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 

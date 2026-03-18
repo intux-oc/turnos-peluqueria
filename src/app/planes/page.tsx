@@ -44,22 +44,7 @@ export default function PlanesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 w-full px-6 py-5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div
-          className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors"
-          onClick={() => router.push('/')}
-        >
-          Peluquería
-        </div>
-        <Button
-          variant="ghost"
-          className="text-xs tracking-widest uppercase font-light hover:text-white hover:bg-white/5"
-          onClick={() => router.push('/login')}
-        >
-          Iniciar Sesión
-        </Button>
-      </nav>
+
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-6 py-20 md:py-32 animate-in fade-in duration-700">
 

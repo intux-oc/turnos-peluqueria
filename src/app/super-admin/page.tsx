@@ -128,15 +128,7 @@ export default function SuperAdminPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 w-full px-6 py-5 bg-black/80 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
-        <div className="text-xl font-light tracking-widest uppercase cursor-pointer hover:text-gray-300 transition-colors" onClick={() => router.push('/')}>
-          Admin de Plataforma
-        </div>
-        <div className="text-[10px] tracking-widest uppercase font-light text-gray-500">
-          Consola de Super-Admin
-        </div>
-      </nav>
+
 
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
 

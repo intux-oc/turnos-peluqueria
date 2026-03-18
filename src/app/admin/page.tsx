@@ -135,7 +135,7 @@ function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      <NavBar />
+
       
       {!isOnline && (
         <div className="bg-yellow-500/10 border-b border-yellow-500/20 px-6 py-2 flex items-center justify-center gap-2 text-yellow-500 text-sm">

@@ -48,40 +48,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black overflow-x-hidden">
       <Toaster theme="dark" position="bottom-right" />
       
-      {/* Navigation */}
-      <nav className="fixed top-0 z-50 w-full px-6 py-6 border-b border-white/5 bg-black/50 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white flex items-center justify-center">
-              <Scissors className="w-4 h-4 text-black" />
-            </div>
-            <span className="text-xl font-light tracking-widest uppercase">Intux Oc</span>
-          </div>
-          <div className="flex items-center gap-8">
-            <Button 
-              variant="ghost" 
-              className="hidden md:flex text-[10px] tracking-widest uppercase font-light text-gray-500 hover:text-white"
-              onClick={() => router.push('/login')}
-            >
-              Ingresar
-            </Button>
-            <Button 
-              className="bg-white text-black hover:bg-gray-200 rounded-none text-[10px] tracking-widest uppercase font-light px-6"
-              onClick={() => {
-                if (!user) {
-                  router.push('/planes')
-                } else if (role === 'superadmin') {
-                  router.push('/super-admin')
-                } else {
-                  router.push('/admin')
-                }
-              }}
-            >
-              {user ? (role === 'superadmin' ? 'Dashboard Global' : 'Mi Dashboard') : 'Registrar mi Negocio'}
-            </Button>
-          </div>
-        </div>
-      </nav>
+
 
       <HeroSection user={user} />
       <FeaturesSection />
