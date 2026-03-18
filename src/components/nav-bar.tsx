@@ -32,28 +32,34 @@ export function NavBar() {
 
     checkSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-        setIsAdmin(profile?.role === 'admin' || profile?.role === 'superadmin');
-      } else {
+      if (!session) {
         setIsAdmin(false);
       }
+      // Nota: No refrescamos el perfil aquí para evitar llamadas excesivas en cambios de estado internos
     });
 
     return () => subscription.unsubscribe();
   }, [supabase]);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setMobileMenuOpen(false);
-    router.push("/");
-    router.refresh();
+    try {
+      setMobileMenuOpen(false);
+      // Limpiar sesión de Supabase
+      await supabase.auth.signOut();
+      
+      // Limpiar estados locales inmediatamente
+      setUser(null);
+      setIsAdmin(false);
+      
+      // Redirigir y forzar recarga para limpiar memoria/caché
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Error signing out:", error);
+      // Incluso si falla, forzamos salida
+      window.location.href = "/";
+    }
   };
 
   const navLinks = [
