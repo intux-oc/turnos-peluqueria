@@ -32,7 +32,7 @@ export const sendEmail = async ({
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Stitch <onboarding@resend.dev>', // Dominio de prueba
+      from: 'Intux Oc <onboarding@resend.dev>', // Dominio de prueba
       to,
       subject,
       html,
@@ -80,7 +80,7 @@ export const getConfirmationTemplate = (data: {
       </p>
       <hr style="border: 0; border-top: 1px solid #222; margin: 30px 0;">
       <p style="text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
-        Impulsado por Stitch
+        Impulsado por Intux Oc
       </p>
     </div>
   `;
@@ -109,7 +109,7 @@ export const getSubscriptionTemplate = (data: {
       
       <hr style="border: 0; border-top: 1px solid #222; margin: 30px 0;">
       <p style="text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
-        Gracias por elegir Stitch
+        Gracias por elegir Intux Oc
       </p>
     </div>
   `;

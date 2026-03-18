@@ -43,6 +43,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -56,6 +58,7 @@ export default function RootLayout({
           defaultTheme="dark"
           disableTransitionOnChange
         >
+          <Toaster theme="dark" position="bottom-right" />
           <RegisterSW />
           <NavBar />
           <main className="flex-1 flex flex-col pt-16">

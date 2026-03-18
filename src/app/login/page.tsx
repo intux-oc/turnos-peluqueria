@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { toast, Toaster } from 'sonner'
+import { toast } from 'sonner'
 import { Mail, Lock, User, ArrowRight } from 'lucide-react'
 
 export default function LoginPage() {
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      <Toaster theme="dark" />
+
       
       <div className="flex-1 flex flex-col md:flex-row">
         {/* Left Side - Image with B&W aesthetic */}
@@ -167,7 +167,7 @@ export default function LoginPage() {
             </form>
             
             <div className="mt-12 text-center text-sm text-gray-500 font-light">
-              {isSignUp ? '¿Ya tenés una cuenta?' : '¿Nuevo en Peluquería?'}
+              {isSignUp ? '¿Ya tenés una cuenta?' : '¿Nuevo en Intux Oc?'}
               <button
                 type="button"
                 className="ml-2 font-medium text-white hover:text-gray-300 transition-colors uppercase tracking-widest text-xs"

@@ -120,15 +120,7 @@ function PagarContent() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black pb-20">
-      {/* Navigation */}
-      <nav className="w-full px-6 py-8 flex justify-between items-center max-w-7xl mx-auto">
-        <h1 className="text-xl font-bold tracking-tighter flex items-center gap-2">
-          ✂️ STITCH
-        </h1>
-        <Button variant="ghost" onClick={() => router.push('/planes')}>
-          Volver
-        </Button>
-      </nav>
+
 
       <main className="max-w-4xl mx-auto px-6 grid md:grid-cols-2 gap-12 mt-12">
         {/* Form Section */}
@@ -182,7 +174,7 @@ function PagarContent() {
             <div className="pt-4 border-t border-gray-900">
               <div className="flex items-center gap-2 mb-6">
                 <Lock className="w-4 h-4 text-gray-500" />
-                <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">Pago seguro procesado por Stitch</span>
+                <span className="text-xs text-gray-500 uppercase tracking-widest font-medium">Pago seguro procesado por Intux Oc</span>
               </div>
               <Button 
                 type="submit"
@@ -230,7 +222,7 @@ function PagarContent() {
                   <span className="text-2xl font-bold text-white">${plan.price.toLocaleString()} ARS</span>
                 </div>
                 <p className="text-[10px] text-gray-500 leading-relaxed uppercase tracking-wider">
-                  Al confirmar, aceptas que Stitch realice el cargo mensual de ${plan.price.toLocaleString()}. Podes cancelar en cualquier momento de forma instantánea.
+                  Al confirmar, aceptas que Intux Oc realice el cargo mensual de ${plan.price.toLocaleString()}. Podes cancelar en cualquier momento de forma instantánea.
                 </p>
               </div>
 
